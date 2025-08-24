@@ -1,0 +1,157 @@
+```
+00:00:01 LotuS 3.03
+          COMMAND
+          perl ~/miniconda3/envs/lotus3/bin/lotus3 
+          -i . -m ssu_miSeqMap.sm.txt -o LOTUS3_ASV 
+          -s ~/miniconda3/envs/lotus3/share/lotus3-3.03-1/configs/sdm_miSeq.txt
+          -p miSeq -amplicon_type SSU 
+          -forwardPrimer GTGCCAGCMGCCGCGGTAA
+          -reversePrimer GGACTACHVGGGTWTCTAAT 
+          -CL dada2 -refDB KSGP
+          -taxAligner lambda -t 20
+```
+
+
+```
+------------ I/O configuration --------------
+Input       .
+Output      LOTUS3_ASV
+SDM options ~/miniconda3/envs/lotus3/share/lotus3-3.03-1/configs/sdm_miSeq.txt
+TempDir     LOTUS3_ASV/tmpFiles/
+NumCores    20
+```
+
+
+```
+------------ Pipeline config   --------------
+Sequencing platform     miseq
+Amplicon target         bacteria, SSU
+Dereplication filter    -derepMin 8:1,4:2,3:3
+Clustering algorithm    DADA2 -> ASV's
+Read mapping to ASV     minimap2, at 0.99 %id cutoff
+ASV clustering based on sequence error profiles (-dada2seed 0)
+Precluster read merging No
+Ref Chimera checking    Yes (DB=~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//rdp_gold.fa, -chim_skew 2)
+deNovo Chimera check    Yes
+Tax assignment          Lambda (-LCA_frac 0.8, -LCA_cover 0.5, -LCA_idthresh 97,95,88,83,81,78,0)
+ReferenceDatabase       KSGP
+RefDB location          ~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//KSGP_v3.1.fasta
+ASV phylogeny           Yes (mafft, fasttree2)
+Unclassified ASV's      Kept in matrix
+```
+
+```
+00:00:01 Reading mapping file
+          Sequence files are indicated in mapping file.
+          Switching to paired end read mode
+          Found "SequencingRun" column, with 1 categories (ssu_1)
+```
+```
+00:00:01 Demultiplexing, filtering, dereplicating input files, this
+          might take some time..
+          check progress at LOTUS3_ASV/LotuSLogS/LotuS_progout.log
+```
+ 
+ 
+```
+00:01:02 Finished primary read processing with sdm:
+          Reads processed: 4,009,780; 4,009,311 (pair 1;pair 2)
+          Accepted (High qual): 2,542,654; 2,816,397 (80; 253,740 end-trimmed)
+          Accepted (Mid qual): 15;28
+          Rejected: 1,467,242; 1,193,478
+          Dereplication block 0: 67,634 unique sequences (avg size
+          28; 1,908,091 counts)
+          For an extensive report see LOTUS3_ASV/LotuSLogS//demulti.log
+```
+
+```
+00:01:02 DADA2 ASV clustering
+          check progress at LOTUS3_ASV/LotuSLogS/LotuS_progout.log
+
+```
+ 
+```
+00:07:45 Found 14840 ASVs, summing to 1700760 reads (dada2)
+```
+
+```
+00:07:45 Starting backmapping of 
+            - dereplicated reads
+            - low-abundant dereplicated Reads
+            - mid-quality reads
+          to ASV's using minimap2 at >= 0.99 identity.
+```
+
+```
+00:08:18 Backmapping dereplicated reads via minimap2: 
+          Backmapping  mid qual reads: 
+          Backmapping  mid qual reads: 
+```
+
+```
+00:08:18 Extending and merging pairs of ASV Seeds
+```
+
+```
+00:08:24 Found 16152 fasta seed sequences based on seed extension
+          and read merging
+```
+
+
+```
+00:08:24 Found contaminated 0 ASV's using minimap2 
+       (phiX.0: ~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//phiX.fasta)
+```
+
+```
+00:09:55 2749 ASV's removed with LULU
+```
+
+```
+ 00:09:55 Postfilter:
+          Extended logs active, contaminant and chimeric matrix will be created.
+          After filtering 12091 ASV's (2300907 reads) remaining in matrix.
+```
+
+```
+00:13:31 Assigning taxonomy against 
+          ~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//KSGP_v3.1.fasta
+          using LAMBDA3
+```
+
+```
+00:15:03 Calculating Taxonomic Abundance Tables from KSGP assignments
+```
+
+```
+Calculating higher abundance levels
+Adding 23 unclassified ASV's to output matrices
+Total reads in matrix: 2300907
+TaxLvl	%Assigned_Reads	%Assigned_ASVs
+Phylum	95	94
+Class	92	79
+Order	88	77
+Family	77	71
+Genus	40	60
+Species	17	32
+```
+
+```
+00:15:04 Building tree (fasttree) and aligning (mafft) OTUs
+```
+
+```
+ 00:26:02 LotuS3 finished. Output in:
+          LOTUS3_ASV
+                    Next steps:          
+          - Phyloseq: load LOTUS3_ASV/phyloseq.Rdata directly with
+          the phyloseq package in R
+          - Phylogeny: ASV phylogentic tree available in LOTUS3_ASV/OTUphylo.nwk
+          - .biom: LOTUS3_ASV/OTU.biom contains biom formatted output
+          - Alpha diversity/rarefaction curves: rtk (available as
+          R package or in bin/rtk)
+          - LotuSLogS/ contains run statistics (useful for describing
+          data/amount of reads/quality and citations to programs used
+          - Tutorial: Visit http://lotus2.earlham.ac.uk for a numerical
+          ecology tutorial
+```

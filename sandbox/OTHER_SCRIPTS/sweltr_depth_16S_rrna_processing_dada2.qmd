@@ -1,0 +1,1159 @@
+---
+title: "SWELTR Depth 16S rRNA"
+subtitle: "Scripts for ASV processing using DADA2"
+format:
+  html: 
+    code-copy: true
+    code-link: false
+    css: styles.css
+    embed-resources: true
+    code-tools:
+      source: true
+      toggle: false
+      caption: none
+      
+    theme: cosmo
+---
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(magrittr)
+library(reactable)
+library(downloadthis)
+library(reactablefmtr)
+```
+
+## Required Packages
+
+```{r}
+set.seed(919191)
+library(dada2); packageVersion("dada2")
+library(ShortRead); packageVersion("ShortRead")
+library(Biostrings); packageVersion("Biostrings")
+library(ggplot2); packageVersion("ggplot2")
+library(gridExtra)
+library(grid)
+library(DECIPHER); packageVersion("DECIPHER")
+library(magrittr)
+library(dplyr)
+library(stringr)
+```
+
+## Quality Assessment & Filtering
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; 2_filt_err_derep.R
+
+{{< downloadthis 16S/DADA2/2_filt_err_derep.R dname="2_filt_err_derep" label="R Script for filtering, error rates, & dereplication" icon="code-slash" type="link" >}}
+
+:::
+
+```{r}
+load("../CUTADAPT/rdata/1.2_cutadapt_ssu.rdata")
+```
+
+```{r}
+cutFs <- sort(list.files(path.cut, pattern = "_R1.fastq.gz", full.names = TRUE))
+cutRs <- sort(list.files(path.cut, pattern = "_R2.fastq.gz", full.names = TRUE))
+
+get.sample.name <- function(fname) strsplit(basename(fname), "_")[[1]][1]
+sample.names <- unname(sapply(cutFs, get.sample.name))
+head(sample.names)
+```
+
+```
+[1] "P00-D00-000-NNN" "P01-D00-010-W4A" "P01-D10-020-W4A" "P01-D20-050-W4A"
+[5] "P01-D50-100-W4A" "P02-D00-010-C0A"
+```
+
+```{r}
+filt_path <- "/"
+
+filtFs <- file.path("filtered", basename(cutFs))
+filtRs <- file.path("filtered", basename(cutRs))
+
+out <- filterAndTrim(cutFs, filtFs, cutRs, filtRs,  
+                     maxN = 0, maxEE = c(2, 2), 
+                     truncQ = 2, rm.phix = TRUE, 
+                     compress = TRUE, multithread = 20) 
+```
+
+```{r}
+out <- data.frame(out)
+out <- tibble::rownames_to_column(out, "SampleID")
+out <- out %>% mutate(SampleID = str_replace_all(SampleID, "_R[0-9].*", ""))
+readr::write_delim(out, "ssu_filter_track.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+filt_table_dada2 <- read.table("16S/DADA2/ssu_filter_track.txt",
+                       header = TRUE, sep = "\t")
+
+filt_table_dada2$per_reads_kept <- 
+  round(filt_table_dada2$reads.out/filt_table_dada2$reads.in, 
+                                  digits = 3)
+```
+
+</br>
+
+```{r}
+#| echo: false
+#| eval: true
+reactable(filt_table_dada2,
+  defaultColDef = colDef(
+    header = function(value) gsub("_", " ", value, fixed = TRUE),
+    cell = function(value) format(value, nsmall = 1),
+    align = "center", filterable = FALSE, sortable = TRUE, resizable = TRUE,
+    footerStyle = list(fontWeight = "bold")
+    ), 
+  columns = list(
+    SampleID = colDef(name = "Sample ID", 
+                       sticky = "left", 
+                       style = list(borderRight = "1px solid #eee"),
+                       headerStyle = list(borderRight = "1px solid #eee"), 
+                       align = "left",
+                       minWidth = 150, footer = "Total reads"), 
+    reads.in = colDef(name = "cutadapt reads", footer = function(values) sprintf("%.0f", sum(values))),
+    reads.out = colDef(name = "filtered reads", footer = function(values) sprintf("%.0f", sum(values)))
+    ), 
+  searchable = TRUE, defaultPageSize = 5, 
+  pageSizeOptions = c(5, 10, nrow(filt_table_dada2)), 
+  showPageSizeOptions = TRUE, highlight = TRUE, 
+  bordered = TRUE, striped = TRUE, compact = FALSE, 
+  wrap = FALSE, showSortable = TRUE, fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))) %>%
+  add_title("Cutadapt read count vs. reads remaining after filtering.", 
+            align = "left", font_size = 18)
+
+```
+
+```{r}
+#| echo: false
+#| eval: false
+filt_table_dada2 %>%
+  download_this(
+    output_name = "ssu_filtered_results",
+    output_extension = ".csv",
+    button_label = "Download data as csv file",
+    button_type = "primary",
+    csv2 = FALSE,
+    has_icon = TRUE,
+    icon = "fa fa-save")
+```
+
+</br>
+
+{{< downloadthis 16S/DADA2/ssu_filter_track.txt dname="ssu_filter_track" label="Download filtering results" icon="table" type="primary" >}}
+
+
+```{r}
+p1 <- plotQualityProfile(filtFs[1:41], aggregate = TRUE)
+p2 <- plotQualityProfile(filtRs[1:41], aggregate = TRUE)
+
+p3 <- grid.arrange(p1, p2, nrow = 1)
+ggsave("figures/ssu_post_filt_plot_qscores.png", p3, width = 7, height = 3)
+save.image("rdata/2.1_filt_ssu.rdata")
+```
+
+```{r}
+#| label: fig-ssu-cutadapt-qscore
+#| echo: false
+#| eval: true
+#| fig-height: 4
+#| fig-width: 4
+#| warning: false
+#| fig-cap: "Aggregated quality score plots for forward (left) & reverse (right) RAW reads."
+knitr::include_graphics("16S/DADA2/ssu_post_filt_plot_qscores.png")
+```
+
+## Learn Error Rates
+
+```{r}
+errF <- learnErrors(filtFs, multithread = TRUE)
+
+errR <- learnErrors(filtRs, multithread = TRUE)
+```
+
+```
+137382256 total bases in 592170 reads from 6 samples will be used for learning the error rates.
+136789513 total bases in 592170 reads from 6 samples will be used for learning the error rates.
+```
+
+```{r}
+p3 <- plotErrors(errF, nominalQ = TRUE)
+ggsave("figures/plot_errorF_1.png", p3, width = 7, height = 5)
+ggsave("figures/plot_errorF_2.png", p3)
+
+p4 <- plotErrors(errR, nominalQ = TRUE)
+ggsave("figures/plot_errorR_1.png", p4, width = 7, height = 5)
+ggsave("figures/plot_errorR_2.png", p4)
+```
+
+
+```{r}
+#| label: fig-dada2-ssu-filt-charts
+#| echo: false
+#| eval: true
+#| fig-cap: "Observed frequency of each transition (e.g., T -> G) as a function of quality score."
+#| fig-subcap: 
+#|   - "Forward"
+#|   - "Reverse"
+#| layout-ncol: 2
+
+knitr::include_graphics("16S/DADA2/plot_errorF_2.png")
+knitr::include_graphics("16S/DADA2/plot_errorR_2.png")
+```
+
+
+## Dereplicate Reads
+
+```{r}
+derepFs <- derepFastq(filtFs, verbose = TRUE)
+derepRs <- derepFastq(filtRs, verbose = TRUE)
+
+names(derepFs) <- sample.names
+names(derepRs) <- sample.names
+
+save.image("rdata/2.2_err_derep_ssu.rdata")
+```
+
+<details>
+  <summary>Click here for results of dereplication</summary>
+
+```
+Dereplicating sequence entries in Fastq file: filtered/P00-D00-000-NNN_R1.fastq.gz
+Encountered 236 unique sequences from 462 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D00-010-W4A_R1.fastq.gz
+Encountered 109746 unique sequences from 205937 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D10-020-W4A_R1.fastq.gz
+Encountered 82012 unique sequences from 161125 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D20-050-W4A_R1.fastq.gz
+Encountered 8148 unique sequences from 17807 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D50-100-W4A_R1.fastq.gz
+Encountered 4037 unique sequences from 11635 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D00-010-C0A_R1.fastq.gz
+Encountered 98599 unique sequences from 195204 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D10-020-C0A_R1.fastq.gz
+Encountered 81962 unique sequences from 159047 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D20-050-C0A_R1.fastq.gz
+Encountered 2671 unique sequences from 3899 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D50-100-C0A_R1.fastq.gz
+Encountered 7 unique sequences from 7 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D00-010-W4B_R1.fastq.gz
+Encountered 74843 unique sequences from 140871 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D10-020-W4B_R1.fastq.gz
+Encountered 53458 unique sequences from 103341 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D20-050-W4B_R1.fastq.gz
+Encountered 2783 unique sequences from 4575 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D50-100-W4B_R1.fastq.gz
+Encountered 3263 unique sequences from 5156 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D00-010-C0B_R1.fastq.gz
+Encountered 87460 unique sequences from 165725 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D10-020-C0B_R1.fastq.gz
+Encountered 23821 unique sequences from 45912 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D20-050-C0B_R1.fastq.gz
+Encountered 2580 unique sequences from 3236 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D50-100-C0B_R1.fastq.gz
+Encountered 2100 unique sequences from 3317 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D00-010-W4C_R1.fastq.gz
+Encountered 29230 unique sequences from 55362 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D10-020-W4C_R1.fastq.gz
+Encountered 19939 unique sequences from 34208 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D20-050-W4C_R1.fastq.gz
+Encountered 3687 unique sequences from 5558 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D50-100-W4C_R1.fastq.gz
+Encountered 3279 unique sequences from 5660 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D00-010-C0C_R1.fastq.gz
+Encountered 77394 unique sequences from 145522 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D10-020-C0C_R1.fastq.gz
+Encountered 130128 unique sequences from 266213 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D20-050-C0C_R1.fastq.gz
+Encountered 1710 unique sequences from 2363 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D50-100-C0C_R1.fastq.gz
+Encountered 2151 unique sequences from 3186 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D00-010-W4D_R1.fastq.gz
+Encountered 116072 unique sequences from 248481 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D10-020-W4D_R1.fastq.gz
+Encountered 62755 unique sequences from 121473 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D20-050-W4D_R1.fastq.gz
+Encountered 6180 unique sequences from 9509 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D50-100-W4D_R1.fastq.gz
+Encountered 10504 unique sequences from 16482 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D00-010-C0D_R1.fastq.gz
+Encountered 21955 unique sequences from 38418 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D10-020-C0D_R1.fastq.gz
+Encountered 8500 unique sequences from 16283 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D20-050-C0D_R1.fastq.gz
+Encountered 10735 unique sequences from 15923 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D50-100-C0D_R1.fastq.gz
+Encountered 10380 unique sequences from 23836 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D00-010-W4E_R1.fastq.gz
+Encountered 97414 unique sequences from 189718 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D10-020-W4E_R1.fastq.gz
+Encountered 108400 unique sequences from 220452 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D20-050-W4E_R1.fastq.gz
+Encountered 7633 unique sequences from 14339 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D50-100-W4E_R1.fastq.gz
+Encountered 11210 unique sequences from 25098 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D00-010-C0E_R1.fastq.gz
+Encountered 92608 unique sequences from 181665 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D10-020-C0E_R1.fastq.gz
+Encountered 90102 unique sequences from 194539 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D20-050-C0E_R1.fastq.gz
+Encountered 3313 unique sequences from 11731 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D50-100-C0E_R1.fastq.gz
+Encountered 8175 unique sequences from 12238 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P00-D00-000-NNN_R2.fastq.gz
+Encountered 295 unique sequences from 462 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D00-010-W4A_R2.fastq.gz
+Encountered 104066 unique sequences from 205937 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D10-020-W4A_R2.fastq.gz
+Encountered 78804 unique sequences from 161125 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D20-050-W4A_R2.fastq.gz
+Encountered 7971 unique sequences from 17807 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P01-D50-100-W4A_R2.fastq.gz
+Encountered 3886 unique sequences from 11635 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D00-010-C0A_R2.fastq.gz
+Encountered 102945 unique sequences from 195204 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D10-020-C0A_R2.fastq.gz
+Encountered 79591 unique sequences from 159047 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D20-050-C0A_R2.fastq.gz
+Encountered 2633 unique sequences from 3899 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P02-D50-100-C0A_R2.fastq.gz
+Encountered 7 unique sequences from 7 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D00-010-W4B_R2.fastq.gz
+Encountered 68542 unique sequences from 140871 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D10-020-W4B_R2.fastq.gz
+Encountered 49489 unique sequences from 103341 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D20-050-W4B_R2.fastq.gz
+Encountered 2582 unique sequences from 4575 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P03-D50-100-W4B_R2.fastq.gz
+Encountered 2939 unique sequences from 5156 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D00-010-C0B_R2.fastq.gz
+Encountered 85747 unique sequences from 165725 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D10-020-C0B_R2.fastq.gz
+Encountered 22247 unique sequences from 45912 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D20-050-C0B_R2.fastq.gz
+Encountered 2425 unique sequences from 3236 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P04-D50-100-C0B_R2.fastq.gz
+Encountered 1923 unique sequences from 3317 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D00-010-W4C_R2.fastq.gz
+Encountered 28275 unique sequences from 55362 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D10-020-W4C_R2.fastq.gz
+Encountered 19203 unique sequences from 34208 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D20-050-W4C_R2.fastq.gz
+Encountered 3505 unique sequences from 5558 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P05-D50-100-W4C_R2.fastq.gz
+Encountered 3070 unique sequences from 5660 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D00-010-C0C_R2.fastq.gz
+Encountered 79178 unique sequences from 145522 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D10-020-C0C_R2.fastq.gz
+Encountered 123814 unique sequences from 266213 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D20-050-C0C_R2.fastq.gz
+Encountered 1663 unique sequences from 2363 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P06-D50-100-C0C_R2.fastq.gz
+Encountered 2053 unique sequences from 3186 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D00-010-W4D_R2.fastq.gz
+Encountered 122581 unique sequences from 248481 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D10-020-W4D_R2.fastq.gz
+Encountered 65667 unique sequences from 121473 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D20-050-W4D_R2.fastq.gz
+Encountered 6396 unique sequences from 9509 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P07-D50-100-W4D_R2.fastq.gz
+Encountered 10167 unique sequences from 16482 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D00-010-C0D_R2.fastq.gz
+Encountered 24600 unique sequences from 38418 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D10-020-C0D_R2.fastq.gz
+Encountered 8940 unique sequences from 16283 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D20-050-C0D_R2.fastq.gz
+Encountered 11103 unique sequences from 15923 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P08-D50-100-C0D_R2.fastq.gz
+Encountered 10975 unique sequences from 23836 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D00-010-W4E_R2.fastq.gz
+Encountered 108371 unique sequences from 189718 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D10-020-W4E_R2.fastq.gz
+Encountered 122749 unique sequences from 220452 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D20-050-W4E_R2.fastq.gz
+Encountered 8322 unique sequences from 14339 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P09-D50-100-W4E_R2.fastq.gz
+Encountered 12471 unique sequences from 25098 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D00-010-C0E_R2.fastq.gz
+Encountered 114449 unique sequences from 181665 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D10-020-C0E_R2.fastq.gz
+Encountered 104547 unique sequences from 194539 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D20-050-C0E_R2.fastq.gz
+Encountered 4662 unique sequences from 11731 total sequences read.
+Dereplicating sequence entries in Fastq file: filtered/P10-D50-100-C0E_R2.fastq.gz
+Encountered 8841 unique sequences from 12238 total sequences read.
+```
+
+</details>
+
+## DADA2 & ASV Inference
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; 3_dada_pseudo.R
+
+{{< downloadthis 16S/DADA2/3_dada_pseudo.R dname="3_dada_pseudo" label="R script for dada2 & ASV inference" icon="code-slash" type="link" >}}
+
+:::
+
+```{r}
+load("rdata/2.2_err_derep_ssu.rdata")
+```
+
+```{r}
+dadaFs <- dada(derepFs, err = errF, pool = "pseudo", multithread = 20)
+```
+
+<details>
+  <summary>Click here for results of dada on forward reads</summary>
+
+```
+Sample 1 - 462 reads in 236 unique sequences.
+Sample 2 - 205937 reads in 109746 unique sequences.
+Sample 3 - 161125 reads in 82012 unique sequences.
+Sample 4 - 17807 reads in 8148 unique sequences.
+Sample 5 - 11635 reads in 4037 unique sequences.
+Sample 6 - 195204 reads in 98599 unique sequences.
+Sample 7 - 159047 reads in 81962 unique sequences.
+Sample 8 - 3899 reads in 2671 unique sequences.
+Sample 9 - 7 reads in 7 unique sequences.
+Sample 10 - 140871 reads in 74843 unique sequences.
+Sample 11 - 103341 reads in 53458 unique sequences.
+Sample 12 - 4575 reads in 2783 unique sequences.
+Sample 13 - 5156 reads in 3263 unique sequences.
+Sample 14 - 165725 reads in 87460 unique sequences.
+Sample 15 - 45912 reads in 23821 unique sequences.
+Sample 16 - 3236 reads in 2580 unique sequences.
+Sample 17 - 3317 reads in 2100 unique sequences.
+Sample 18 - 55362 reads in 29230 unique sequences.
+Sample 19 - 34208 reads in 19939 unique sequences.
+Sample 20 - 5558 reads in 3687 unique sequences.
+Sample 21 - 5660 reads in 3279 unique sequences.
+Sample 22 - 145522 reads in 77394 unique sequences.
+Sample 23 - 266213 reads in 130128 unique sequences.
+Sample 24 - 2363 reads in 1710 unique sequences.
+Sample 25 - 3186 reads in 2151 unique sequences.
+Sample 26 - 248481 reads in 116072 unique sequences.
+Sample 27 - 121473 reads in 62755 unique sequences.
+Sample 28 - 9509 reads in 6180 unique sequences.
+Sample 29 - 16482 reads in 10504 unique sequences.
+Sample 30 - 38418 reads in 21955 unique sequences.
+Sample 31 - 16283 reads in 8500 unique sequences.
+Sample 32 - 15923 reads in 10735 unique sequences.
+Sample 33 - 23836 reads in 10380 unique sequences.
+Sample 34 - 189718 reads in 97414 unique sequences.
+Sample 35 - 220452 reads in 108400 unique sequences.
+Sample 36 - 14339 reads in 7633 unique sequences.
+Sample 37 - 25098 reads in 11210 unique sequences.
+Sample 38 - 181665 reads in 92608 unique sequences.
+Sample 39 - 194539 reads in 90102 unique sequences.
+Sample 40 - 11731 reads in 3313 unique sequences.
+Sample 41 - 12238 reads in 8175 unique sequences.
+```
+
+</details>
+
+```{r}
+dadaFs[[2]]
+```
+
+```
+selfConsist step 2dada-class: object describing DADA2 denoising results
+4880 sequence variants were inferred from 109746 input unique sequences.
+Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16
+```
+
+```{r}
+dadaRs <- dada(derepRs, err = errR, pool = "pseudo", multithread = 20)
+```
+
+<details>
+  <summary>Click here for results of dada on reverse reads</summary>
+
+
+```
+Sample 1 - 462 reads in 295 unique sequences.
+Sample 2 - 205937 reads in 104066 unique sequences.
+Sample 3 - 161125 reads in 78804 unique sequences.
+Sample 4 - 17807 reads in 7971 unique sequences.
+Sample 5 - 11635 reads in 3886 unique sequences.
+Sample 6 - 195204 reads in 102945 unique sequences.
+Sample 7 - 159047 reads in 79591 unique sequences.
+Sample 8 - 3899 reads in 2633 unique sequences.
+Sample 9 - 7 reads in 7 unique sequences.
+Sample 10 - 140871 reads in 68542 unique sequences.
+Sample 11 - 103341 reads in 49489 unique sequences.
+Sample 12 - 4575 reads in 2582 unique sequences.
+Sample 13 - 5156 reads in 2939 unique sequences.
+Sample 14 - 165725 reads in 85747 unique sequences.
+Sample 15 - 45912 reads in 22247 unique sequences.
+Sample 16 - 3236 reads in 2425 unique sequences.
+Sample 17 - 3317 reads in 1923 unique sequences.
+Sample 18 - 55362 reads in 28275 unique sequences.
+Sample 19 - 34208 reads in 19203 unique sequences.
+Sample 20 - 5558 reads in 3505 unique sequences.
+Sample 21 - 5660 reads in 3070 unique sequences.
+Sample 22 - 145522 reads in 79178 unique sequences.
+Sample 23 - 266213 reads in 123814 unique sequences.
+Sample 24 - 2363 reads in 1663 unique sequences.
+Sample 25 - 3186 reads in 2053 unique sequences.
+Sample 26 - 248481 reads in 122581 unique sequences.
+Sample 27 - 121473 reads in 65667 unique sequences.
+Sample 28 - 9509 reads in 6396 unique sequences.
+Sample 29 - 16482 reads in 10167 unique sequences.
+Sample 30 - 38418 reads in 24600 unique sequences.
+Sample 31 - 16283 reads in 8940 unique sequences.
+Sample 32 - 15923 reads in 11103 unique sequences.
+Sample 33 - 23836 reads in 10975 unique sequences.
+Sample 34 - 189718 reads in 108371 unique sequences.
+Sample 35 - 220452 reads in 122749 unique sequences.
+Sample 36 - 14339 reads in 8322 unique sequences.
+Sample 37 - 25098 reads in 12471 unique sequences.
+Sample 38 - 181665 reads in 114449 unique sequences.
+Sample 39 - 194539 reads in 104547 unique sequences.
+Sample 40 - 11731 reads in 4662 unique sequences.
+Sample 41 - 12238 reads in 8841 unique sequences.
+```
+
+</details>
+
+```{r}
+dadaRs[[2]]
+```
+
+```
+selfConsist step 2dada-class: object describing DADA2 denoising results
+4747 sequence variants were inferred from 104066 input unique sequences.
+Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16
+```
+
+```{r}
+#| echo: false
+#| eval: true
+dada_table <- read.table("16S/DADA2/ssu_dada_track.txt",
+                       header = TRUE, sep = "\t")
+```
+
+</br>
+
+```{r}
+#| echo: false
+#| eval: true
+reactable(dada_table,
+  defaultColDef = colDef(
+    header = function(value) gsub("_", " ", value, fixed = TRUE),
+    cell = function(value) format(value, nsmall = 1),
+    align = "center", filterable = FALSE, sortable = TRUE, resizable = TRUE,
+    footerStyle = list(fontWeight = "bold")
+    ), 
+  columns = list(
+    SampleID = colDef(name = "Sample ID", 
+                       sticky = "left", 
+                       style = list(borderRight = "1px solid #eee"),
+                       headerStyle = list(borderRight = "1px solid #eee"), 
+                       align = "left",
+                       minWidth = 150, footer = "Total reads"), 
+    denoisedF = colDef(name = "denoised (forward)", footer = function(values) sprintf("%.0f", sum(values))),
+    denoisedR = colDef(name = "denoised (reverse)", footer = function(values) sprintf("%.0f", sum(values)))
+    ), 
+  searchable = TRUE, defaultPageSize = 5, 
+  pageSizeOptions = c(5, 10, nrow(dada_table)), 
+  showPageSizeOptions = TRUE, highlight = TRUE, 
+  bordered = TRUE, striped = TRUE, compact = FALSE, 
+  wrap = FALSE, showSortable = TRUE, fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))) %>%
+  add_title("Results of denoising forward and reverse reads.", 
+            align = "left", font_size = 18)
+
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+dada_table %>%
+  download_this(
+    output_name = "ssu_dada_track",
+    output_extension = ".csv",
+    button_label = "Download data as csv file",
+    button_type = "primary",
+    csv2 = FALSE,
+    has_icon = TRUE,
+    icon = "fa fa-save")
+```
+
+{{< downloadthis 16S/DADA2/ssu_dada_track.txt dname="ssu_dada_track" label="Download results of denoising" icon="table" type="primary" >}}
+
+
+## Remove Chimeras
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; 4_merge_chimera_pseudo.R
+
+{{< downloadthis 16S/DADA2/4_merge_chimera_pseudo.R dname="4_merge_chimera_pseudo" label="R script for chimera identification" icon="code-slash" type="link" >}}
+
+:::
+
+```{r}
+load("rdata/3.1_dada_ssu_pseudo.rdata")
+```
+
+```{r}
+mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
+```
+
+<details>
+  <summary>Click here for results of merging forward & reverse reads</summary>
+
+```
+449 paired-reads (in 25 unique pairings) successfully merged out of 450 (in 26 pairings) input.
+134390 paired-reads (in 3705 unique pairings) successfully merged out of 190987 (in 10779 pairings) input.
+109926 paired-reads (in 3042 unique pairings) successfully merged out of 154280 (in 8496 pairings) input.
+13609 paired-reads (in 697 unique pairings) successfully merged out of 16721 (in 1157 pairings) input.
+9476 paired-reads (in 249 unique pairings) successfully merged out of 10905 (in 384 pairings) input.
+133392 paired-reads (in 3447 unique pairings) successfully merged out of 186679 (in 9843 pairings) input.
+110748 paired-reads (in 3194 unique pairings) successfully merged out of 152665 (in 8456 pairings) input.
+2381 paired-reads (in 294 unique pairings) successfully merged out of 3111 (in 451 pairings) input.
+No paired-reads (in ZERO unique pairings) successfully merged out of 7 pairings) input.
+96729 paired-reads (in 3185 unique pairings) successfully merged out of 133239 (in 8306 pairings) input.
+72020 paired-reads (in 2742 unique pairings) successfully merged out of 98454 (in 6619 pairings) input.
+3376 paired-reads (in 262 unique pairings) successfully merged out of 3976 (in 370 pairings) input.
+3706 paired-reads (in 319 unique pairings) successfully merged out of 4581 (in 451 pairings) input.
+110685 paired-reads (in 3330 unique pairings) successfully merged out of 156447 (in 9396 pairings) input.
+32433 paired-reads (in 1673 unique pairings) successfully merged out of 43656 (in 3433 pairings) input.
+1436 paired-reads (in 214 unique pairings) successfully merged out of 1944 (in 347 pairings) input.
+2398 paired-reads (in 213 unique pairings) successfully merged out of 2950 (in 298 pairings) input.
+38433 paired-reads (in 1839 unique pairings) successfully merged out of 52081 (in 4003 pairings) input.
+23349 paired-reads (in 1657 unique pairings) successfully merged out of 31552 (in 3566 pairings) input.
+3485 paired-reads (in 351 unique pairings) successfully merged out of 4616 (in 542 pairings) input.
+4751 paired-reads (in 311 unique pairings) successfully merged out of 5357 (in 420 pairings) input.
+98713 paired-reads (in 3291 unique pairings) successfully merged out of 138744 (in 8564 pairings) input.
+187039 paired-reads (in 4059 unique pairings) successfully merged out of 256520 (in 11106 pairings) input.
+1300 paired-reads (in 188 unique pairings) successfully merged out of 1682 (in 295 pairings) input.
+2093 paired-reads (in 248 unique pairings) successfully merged out of 2698 (in 391 pairings) input.
+172258 paired-reads (in 3783 unique pairings) successfully merged out of 239462 (in 10559 pairings) input.
+82691 paired-reads (in 2935 unique pairings) successfully merged out of 116592 (in 7594 pairings) input.
+6274 paired-reads (in 544 unique pairings) successfully merged out of 8117 (in 862 pairings) input.
+11654 paired-reads (in 823 unique pairings) successfully merged out of 14809 (in 1258 pairings) input.
+26173 paired-reads (in 1575 unique pairings) successfully merged out of 34015 (in 3171 pairings) input.
+11270 paired-reads (in 606 unique pairings) successfully merged out of 14037 (in 1113 pairings) input.
+8494 paired-reads (in 520 unique pairings) successfully merged out of 11332 (in 1108 pairings) input.
+17926 paired-reads (in 580 unique pairings) successfully merged out of 21288 (in 1022 pairings) input.
+129907 paired-reads (in 3641 unique pairings) successfully merged out of 179958 (in 10633 pairings) input.
+155276 paired-reads (in 3762 unique pairings) successfully merged out of 210293 (in 10677 pairings) input.
+11963 paired-reads (in 468 unique pairings) successfully merged out of 13968 (in 623 pairings) input.
+23479 paired-reads (in 460 unique pairings) successfully merged out of 24868 (in 571 pairings) input.
+121068 paired-reads (in 3238 unique pairings) successfully merged out of 170348 (in 10189 pairings) input.
+140609 paired-reads (in 3389 unique pairings) successfully merged out of 188058 (in 8734 pairings) input.
+10142 paired-reads (in 184 unique pairings) successfully merged out of 11030 (in 284 pairings) input.
+8139 paired-reads (in 958 unique pairings) successfully merged out of 10806 (in 1727 pairings) input.
+```
+
+</details>
+
+```{r}
+head(mergers[[1]])
+```
+
+```
+1 TACGAGTACCCCAAGCATTATCCGGAATTACTGGGCGTAAAGCGTCTGTAGGAGGTTTATATAGTCGTGCGTTAAATTCTGGGGCCCAACCTCAGAGCCGCGCTCGAAACGTATAAACTAGAGGGTGTGAGAGGCTGATAGAACCTATGGTGTAGGGGTGAAATCCGTTGATATCATAGGGAATACCAAAGGCGAAGGCATTCAGCTAGCGCACTCCTGACTCTGAGAGACGAAAGCGTGGGGAGCAAAAAGG
+2 TACGTAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGTGCGCAGGCGGTCTTGTAAGACAGAGGTGAAATCCCCGGGCTTAACCTGGGAACTGCCTTTGTGACTGCAAGGCTTGAGTACGGCAGAGGGGGATGGAATTCCGCGTGTAGCAGTGAAATGCGTAGATATGCGGAGGAACACCGATGGCGAAGGCAGTCCCCTGGGCCTGTACTGACGCTCATGCACGAAAGCGTGGGGAGCAAACAGG
+3 TACGGAGGGTGCAAGCGTTATCCGGATTCACTGGGTTTAAAGGGAGCGTAGGTGGGCTGGTAAGTCAGTGGTGAAATCTCCGGGCTTAACTCGGAAACTGCCGTTGATACTATCAGTCTTGAATATTGTGGAGGTAAGCGGAATATGTCATGTAGCGGTGAAATGCTTAGATATGACATAGAACACCGATAGCGAAGGCAGCTTGCTACACAATTATTGACACTGAGGCTCGAAAGCGTGGGGATCAAACAGG
+4 TACGTAGGTGGCAAGCGATACTCGGAATCACTAGGCGTAAAGCGCAGGTAGGCGGTTCGGTAAGTCTTTTGTGAAAGCTCCTGGCTCAACTGGGAGAGGCCAAGGGAAACTACCGGACTAGAGTGTGGTAGGGGATACTGGAATTCCTGGTGTAGCGGTGAAATGCGTAGATATCAGGAGGAATACCTATGGCGAAAGCAGGTATCTGGGCCATCACTGACGCTGAGCTGCGAAAGCTAGGGGAGCAAACAGG
+5 TACGTAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGTGCGCAGGCGGTTGTGTAAGACAGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATTTGTGACTGCACGGCTGGAGTGCGGCAGAGGGGGATGGAATTCCGCGTGTAGCAGTGAAATGCGTAGATATGCGGAGGAACACCGATGGCGAAGGCAATCCCCTGGGCCTGCACTGACGCTCATGCACGAAAGCGTGGGGAGCAAACAGG
+6 TACGGAGGGTGCAAGCATTAATCGGATTTATTGGGCGTAAAGGGCGCGTAGGCGGGAGAATAAGTCGGACGTGAAATCCCGGGGCTCAACCCCGGAACAGCATCTGAAACTATTTTTCTAGAGGATAGGCGGAGAAAACGGAATTCCACAAGTAGCGGTGAAATGCGTAGATATGTGGAAGAACACCTGTGGCGAAAGCGGTTTTCTAGCTTAGACCTGACGCTGAGGCGCGAAAGTAAGGGGATCAAACAGG
+
+```
+
+```
+  abundance forward reverse nmatch nmismatch nindel prefer accept
+1        53       1       2    210         0      0      2   TRUE
+2        40      18       1    210         0      0      2   TRUE
+3        33       2       4    210         0      0      1   TRUE
+4        32       7       3    210         0      0      2   TRUE
+5        29       3      17    210         0      0      1   TRUE
+6        23       9      10    210         0      0      1   TRUE
+```
+
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+```
+[1]    41 15828
+```
+
+```{r}
+table(nchar(getSequences(seqtab)))
+```
+
+```
+  200   203   207   208   217   220   221   222   223   224   225   227   228 
+    1     1     1     1     1     2    12    13    13     1     2     1     1 
+  231   232   233   238   239   241   242   244   245   246   247   248   249 
+    1     6     2     2     1     2     2     4     2     1     1     1     2 
+  250   251   252   253   254   255   256   257   258   260   261   265   270 
+    3    22   335 14162  1048    91    18    26     2     3     1     1     3 
+  271   272   273   282   283   287   290   295   311   323   370   381   387 
+    1     3     7     1     1     2     1     2     1     1     1     5     1 
+  390   409   411   412   418   422   428   431   449 
+    1     1     1     1     1     1     1     1     1 
+```
+
+```{r}
+read_length <-  data.frame(nchar(getSequences(seqtab)))
+colnames(read_length) <- "length"
+plot_a <- qplot(length, data = read_length, 
+                geom = "histogram", binwidth = 1, 
+                xlab = "read length", 
+                ylab = "total variants", 
+                xlim = c(240, 280)) 
+ggsave("figures/ssu_read_length_before_pseudo.png", plot_a, width = 7, height = 3)
+saveRDS(seqtab, "rdata/seqtab_merge_pseudo.rds")
+```
+
+```{r}
+#| label: fig-dada2-ssu-read-length-before-pseudo
+#| echo: false
+#| eval: true
+#| fig-cap: "Distribution of read length by total ASVs before removing extreme length variants."
+
+knitr::include_graphics("16S/DADA2/ssu_read_length_before_pseudo.png")
+```
+
+```{r}
+seqtab.2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(251,255)]
+dim(seqtab.2)
+```
+
+```
+[1]    41 15658
+```
+
+```{r}
+table(nchar(getSequences(seqtab.2)))
+```
+
+```
+  251   252   253   254   255 
+   22   335 14162  1048    91 
+```   
+
+```{r}
+saveRDS(seqtab.2, "rdata/seqtab_pseudo.rds")
+```
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab.2,  
+                                    method = "consensus", 
+                                    multithread = 20, 
+                                    verbose = TRUE)
+```
+
+```
+Identified 353 bimeras out of 15658 input sequences.
+```
+
+```{r}
+dim(seqtab.nochim)
+```
+
+```
+[1]    41 15305
+```
+
+```{r}
+sum(seqtab.nochim)/sum(seqtab.2)
+```
+
+```
+[1] 0.9679099
+```
+
+```{r}
+saveRDS(seqtab.nochim, "rdata/seqtab.nochim_pseudo.rds")
+
+```
+
+```{r}
+table(nchar(getSequences(seqtab.nochim)))
+```
+
+```
+  251   252   253   254   255 
+   21   333 13821  1039    91 
+```
+
+```{r}
+table(colSums(seqtab.nochim>0))
+```
+
+```
+    1     2     3     4     5     6     7     8     9    10    11    12    13 
+10268   323   242   274   256   301   324   309   289   311   288   277   286 
+   14    15    16    17    18    19    20    21    22    23    24    25    26 
+  259   240   244   237   159   138   105    63    39    21    24    11     6 
+   27    28    29    36 
+    7     2     1     1 
+```
+
+```{r}
+table(rowSums(seqtab.nochim>0))
+```
+
+```
+   0   25  183  187  212  213  246  247  258  289  302  316  348  449  459  512 
+   1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+ 534  574  592  672  816  924 1541 1591 1606 1762 2617 2792 2876 3035 3036 3100 
+   1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+3132 3173 3236 3278 3474 3536 3599 3600 3865 
+   1    1    1    1    1    1    1    1    1 
+```
+
+```{r}
+save.image("rdata/4.1_pre_tax_ssu_pseudo.rdata")
+```
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(sapply(fnFs, getN), 
+               sapply(fnFs.filtN, getN), 
+               out, 
+               sapply(dadaFs, getN), 
+               sapply(dadaRs, getN), 
+               sapply(mergers, getN), 
+               rowSums(seqtab.nochim))
+colnames(track) <- c("raw", "pre_filt", "cut", "filtered", "denoisedF", 
+                     "denoisedR", "merged",  "nonchim")
+
+track <- data.frame(track)
+track <- tibble::rownames_to_column(track, "SampleID")
+
+track <- track %>% mutate(SampleID = str_replace_all(SampleID, "^.*/", "")) %>%
+  mutate(SampleID = str_replace_all(SampleID, "_R[0-9].*", ""))
+
+readr::write_delim(track, "ssu_wf_read_changes.txt", delim = "\t")
+save.image("rdata/4.1_pre_tax_ssu_pseudo.rdata")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+nochim_table_dada2 <- read.table("16S/DADA2/ssu_wf_read_changes.txt",
+                       header = TRUE, sep = "\t")
+
+nochim_table_dada2$per_reads_kept <- 
+  round(nochim_table_dada2$nonchim/nochim_table_dada2$raw, 
+                                  digits = 3)
+```
+
+</br>
+
+```{r}
+#| echo: false
+#| eval: true
+reactable(nochim_table_dada2,
+  defaultColDef = colDef(
+    header = function(value) gsub("_", " ", value, fixed = TRUE),
+    cell = function(value) format(value, nsmall = 1),
+    align = "center", filterable = FALSE, sortable = TRUE, resizable = TRUE,
+    footerStyle = list(fontWeight = "bold")
+    ), 
+  columns = list(
+    SampleID = colDef(name = "Sample ID", 
+                       sticky = "left", 
+                       style = list(borderRight = "1px solid #eee"),
+                       headerStyle = list(borderRight = "1px solid #eee"), 
+                       align = "left",
+                       minWidth = 150, 
+                       footer = "Total reads"), 
+    raw = colDef(name = "raw reads", footer = function(values) sprintf("%.0f", sum(values))),
+    cut = colDef(name = "after cutadapt", footer = function(values) sprintf("%.0f", sum(values))),
+    filtered = colDef(footer = function(values) sprintf("%.0f", sum(values))),
+    denoisedF = colDef(footer = function(values) sprintf("%.0f", sum(values))),
+    denoisedR = colDef(footer = function(values) sprintf("%.0f", sum(values))),
+    merged = colDef(footer = function(values) sprintf("%.0f", sum(values))),
+    nonchim = colDef(name = "final read count", footer = function(values) sprintf("%.0f", sum(values)))
+    ), 
+  searchable = TRUE, defaultPageSize = 5, 
+  pageSizeOptions = c(5, 10, nrow(nochim_table_dada2)), 
+  showPageSizeOptions = TRUE, highlight = TRUE, 
+  bordered = TRUE, striped = TRUE, compact = FALSE, 
+  wrap = FALSE, showSortable = TRUE, fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))) %>%
+  add_title("Tracking read count through workflow.", 
+            align = "left", font_size = 18)
+
+```
+
+</br>
+
+{{< downloadthis 16S/DADA2/ssu_wf_read_changes.txt dname="ssu_wf_read_changes" label="Download read changes results" icon="table" type="primary" >}}
+
+## Assign Taxonomy
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; 5_tax_assign_pseudo.R
+
+{{< downloadthis 16S/DADA2/5_tax_assign_pseudo.R dname="5_tax_assign_pseudo" label="R script for taxonomic assignment" icon="code-slash" type="link" >}}
+
+:::
+
+```{r}
+#load("rdata/4.1_pre_tax_ssu_pseudo.rdata")
+remove(list = ls())
+seqtab.trim.nochim.consensus <- readRDS("rdata/seqtab.nochim_pseudo.rds")
+seqtab.consensus <- seqtab.trim.nochim.consensus
+```
+
+```{r}
+########################################
+# TAXONOMY = silva
+########################################
+tax_silva_v138.consensus <- assignTaxonomy(seqtab.consensus, 
+                              "TAXONOMY_FILES/silva_nr99_v138.1_train_set.fa.gz", 
+                                        multithread = TRUE, verbose = TRUE)
+saveRDS(tax_silva_v138.consensus, "5.tax_silva_v138.consensus.rds")
+
+tax_silva_v132.consensus <- assignTaxonomy(seqtab.consensus, 
+                              "TAXONOMY_FILES/silva_nr_v132_train_set.fa.gz", 
+                                        multithread = TRUE, verbose = TRUE)
+saveRDS(tax_silva_v132.consensus, "5.tax_silva_v132.consensus.rds")
+```
+
+```{r}
+########################################
+# TAXONOMY = RDP
+########################################
+tax_rdp_v138.consensus <- assignTaxonomy(seqtab.consensus, 
+                            "TAXONOMY_FILES/rdp_train_set_18.fa.gz", 
+                                      multithread = TRUE, verbose = TRUE)
+saveRDS(tax_rdp_v138.consensus, "5.tax_rdp_v138.consensus.rds")
+```
+
+```{r}
+########################################
+# TAXONOMY = ITGDB
+########################################
+tax_itgdb.consensus <- assignTaxonomy(seqtab.consensus, 
+                                      "TAXONOMY_FILES/itgdb_dada2.fa", 
+                                      multithread = TRUE, verbose = TRUE)
+saveRDS(tax_itgdb.consensus, "5.tax_itgdb.consensus.rds")
+```
+
+```{r}
+########################################
+# TAXONOMY = GSRDB
+########################################
+tax_gsrdb.consensus <- assignTaxonomy(seqtab.consensus, 
+                                      "TAXONOMY_FILES/gsrdb_dada2.fa", 
+                                      multithread = TRUE, verbose = TRUE)
+saveRDS(tax_gsrdb.consensus, "5.tax_gsrdb.consensus.rds")
+```
+
+```{r}
+save.image("rdata/5.1_dada2_wf_ssu_pseudo.rdata")
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+devtools::session_info()
+```
+
+<details>
+  <summary>Click here for Session Information</summary>
+
+
+```
+R version 4.3.2 (2023-10-31)
+Platform: x86_64-conda-linux-gnu (64-bit)
+Running under: Rocky Linux 8.9 (Green Obsidian)
+
+Matrix products: default
+BLAS/LAPACK: /home/scottjj/miniconda3/envs/R/lib/libopenblasp-r0.3.25.so;  LAPACK version 3.11.0
+
+locale:
+[1] C
+
+time zone: America/New_York
+tzcode source: system (glibc)
+
+attached base packages:
+ [1] parallel  grid      stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] stringr_1.5.1               dplyr_1.1.4                
+ [3] magrittr_2.0.3              DECIPHER_2.30.0            
+ [5] RSQLite_2.3.4               gridExtra_2.3              
+ [7] ggplot2_3.5.1               ShortRead_1.60.0           
+ [9] GenomicAlignments_1.38.0    SummarizedExperiment_1.32.0
+[11] Biobase_2.62.0              MatrixGenerics_1.14.0      
+[13] matrixStats_1.2.0           Rsamtools_2.18.0           
+[15] GenomicRanges_1.54.1        Biostrings_2.70.1          
+[17] GenomeInfoDb_1.38.2         XVector_0.42.0             
+[19] IRanges_2.36.0              S4Vectors_0.40.2           
+[21] BiocParallel_1.36.0         BiocGenerics_0.48.1        
+[23] dada2_1.30.0                Rcpp_1.0.13                
+
+loaded via a namespace (and not attached):
+ [1] gtable_0.3.5            hwriter_1.3.2.1         latticeExtra_0.6-30    
+ [4] lattice_0.22-5          tzdb_0.4.0              vctrs_0.6.5            
+ [7] tools_4.3.2             bitops_1.0-7            generics_0.1.3         
+[10] tibble_3.2.1            fansi_1.0.6             blob_1.2.4             
+[13] pkgconfig_2.0.3         Matrix_1.6-4            RColorBrewer_1.1-3     
+[16] RcppParallel_5.1.7      lifecycle_1.0.4         GenomeInfoDbData_1.2.11
+[19] farver_2.1.2            compiler_4.3.2          deldir_2.0-2           
+[22] textshaping_0.3.7       munsell_0.5.1           codetools_0.2-19       
+[25] RCurl_1.98-1.13         pillar_1.9.0            crayon_1.5.2           
+[28] cachem_1.0.8            DelayedArray_0.28.0     abind_1.4-5            
+[31] tidyselect_1.2.1        stringi_1.8.3           reshape2_1.4.4         
+[34] labeling_0.4.3          fastmap_1.1.1           colorspace_2.1-1       
+[37] cli_3.6.3               SparseArray_1.2.2       S4Arrays_1.2.0         
+[40] utf8_1.2.4              readr_2.1.4             withr_3.0.1            
+[43] scales_1.3.0            bit64_4.0.5             jpeg_0.1-10            
+[46] bit_4.0.5               interp_1.1-5            hms_1.1.3              
+[49] ragg_1.2.7              png_0.1-8               memoise_2.0.1          
+[52] rlang_1.1.4             glue_1.7.0              DBI_1.2.0              
+[55] vroom_1.6.5             R6_2.5.1                plyr_1.8.9             
+[58] systemfonts_1.0.5       zlibbioc_1.48.0        
+- Session info ---------------------------------------------------------------
+ setting  value
+ version  R version 4.3.2 (2023-10-31)
+ os       Rocky Linux 8.9 (Green Obsidian)
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C
+ ctype    C
+ tz       America/New_York
+ date     2024-10-25
+ pandoc   3.1.3 @ /home/scottjj/miniconda3/envs/R/bin/pandoc
+
+- Packages -------------------------------------------------------------------
+ package              * version   date (UTC) lib source
+ abind                  1.4-5     2016-07-21 [1] CRAN (R 4.3.2)
+ Biobase              * 2.62.0    2023-10-24 [1] Bioconductor
+ BiocGenerics         * 0.48.1    2023-11-01 [1] Bioconductor
+ BiocParallel         * 1.36.0    2023-10-24 [1] Bioconductor
+ Biostrings           * 2.70.1    2023-10-25 [1] Bioconductor
+ bit                    4.0.5     2022-11-15 [1] CRAN (R 4.3.0)
+ bit64                  4.0.5     2020-08-30 [1] CRAN (R 4.3.0)
+ bitops                 1.0-7     2021-04-24 [1] CRAN (R 4.3.2)
+ blob                   1.2.4     2023-03-17 [1] CRAN (R 4.3.0)
+ cachem                 1.0.8     2023-05-01 [1] CRAN (R 4.3.0)
+ cli                    3.6.3     2024-06-21 [1] CRAN (R 4.3.2)
+ codetools              0.2-19    2023-02-01 [1] CRAN (R 4.3.0)
+ colorspace             2.1-1     2024-07-26 [1] CRAN (R 4.3.2)
+ crayon                 1.5.2     2022-09-29 [1] CRAN (R 4.3.0)
+ dada2                * 1.30.0    2023-10-24 [1] Bioconductor
+ DBI                    1.2.0     2023-12-21 [1] CRAN (R 4.3.2)
+ DECIPHER             * 2.30.0    2023-10-24 [1] Bioconductor
+ DelayedArray           0.28.0    2023-10-24 [1] Bioconductor
+ deldir                 2.0-2     2023-11-23 [1] CRAN (R 4.3.2)
+ devtools               2.4.5     2022-10-11 [1] CRAN (R 4.3.2)
+ digest                 0.6.37    2024-08-19 [1] CRAN (R 4.3.2)
+ dplyr                * 1.1.4     2023-11-17 [1] CRAN (R 4.3.2)
+ ellipsis               0.3.2     2021-04-29 [1] CRAN (R 4.3.0)
+ fansi                  1.0.6     2023-12-08 [1] CRAN (R 4.3.2)
+ farver                 2.1.2     2024-05-13 [1] CRAN (R 4.3.2)
+ fastmap                1.1.1     2023-02-24 [1] CRAN (R 4.3.0)
+ fs                     1.6.3     2023-07-20 [1] CRAN (R 4.3.1)
+ generics               0.1.3     2022-07-05 [1] CRAN (R 4.3.0)
+ GenomeInfoDb         * 1.38.2    2023-12-13 [1] Bioconductor 3.18 (R 4.3.2)
+ GenomeInfoDbData       1.2.11    2023-12-26 [1] Bioconductor
+ GenomicAlignments    * 1.38.0    2023-10-24 [1] Bioconductor
+ GenomicRanges        * 1.54.1    2023-10-29 [1] Bioconductor
+ ggplot2              * 3.5.1     2024-04-23 [1] CRAN (R 4.3.2)
+ glue                   1.7.0     2024-01-09 [1] CRAN (R 4.3.2)
+ gridExtra            * 2.3       2017-09-09 [1] CRAN (R 4.3.2)
+ gtable                 0.3.5     2024-04-22 [1] CRAN (R 4.3.2)
+ hms                    1.1.3     2023-03-21 [1] CRAN (R 4.3.0)
+ htmltools              0.5.7     2023-11-03 [1] CRAN (R 4.3.2)
+ htmlwidgets            1.6.4     2023-12-06 [1] CRAN (R 4.3.2)
+ httpuv                 1.6.13    2023-12-06 [1] CRAN (R 4.3.2)
+ hwriter                1.3.2.1   2022-04-08 [1] CRAN (R 4.3.2)
+ interp                 1.1-5     2023-11-27 [1] CRAN (R 4.3.2)
+ IRanges              * 2.36.0    2023-10-24 [1] Bioconductor
+ jpeg                   0.1-10    2022-11-29 [1] CRAN (R 4.3.2)
+ labeling               0.4.3     2023-08-29 [1] CRAN (R 4.3.1)
+ later                  1.3.2     2023-12-06 [1] CRAN (R 4.3.2)
+ lattice                0.22-5    2023-10-24 [1] CRAN (R 4.3.1)
+ latticeExtra           0.6-30    2022-07-04 [1] CRAN (R 4.3.2)
+ lifecycle              1.0.4     2023-11-07 [1] CRAN (R 4.3.2)
+ magrittr             * 2.0.3     2022-03-30 [1] CRAN (R 4.3.0)
+ Matrix                 1.6-4     2023-11-30 [1] CRAN (R 4.3.2)
+ MatrixGenerics       * 1.14.0    2023-10-24 [1] Bioconductor
+ matrixStats          * 1.2.0     2023-12-11 [1] CRAN (R 4.3.2)
+ memoise                2.0.1     2021-11-26 [1] CRAN (R 4.3.0)
+ mime                   0.12      2021-09-28 [1] CRAN (R 4.3.0)
+ miniUI                 0.1.1.1   2018-05-18 [1] CRAN (R 4.3.2)
+ munsell                0.5.1     2024-04-01 [1] CRAN (R 4.3.2)
+ pillar                 1.9.0     2023-03-22 [1] CRAN (R 4.3.0)
+ pkgbuild               1.4.3     2023-12-10 [1] CRAN (R 4.3.2)
+ pkgconfig              2.0.3     2019-09-22 [1] CRAN (R 4.3.0)
+ pkgload                1.3.3     2023-09-22 [1] CRAN (R 4.3.2)
+ plyr                   1.8.9     2023-10-02 [1] CRAN (R 4.3.1)
+ png                    0.1-8     2022-11-29 [1] CRAN (R 4.3.2)
+ profvis                0.3.8     2023-05-02 [1] CRAN (R 4.3.2)
+ promises               1.2.1     2023-08-10 [1] CRAN (R 4.3.1)
+ purrr                  1.0.2     2023-08-10 [1] CRAN (R 4.3.1)
+ R6                     2.5.1     2021-08-19 [1] CRAN (R 4.3.0)
+ ragg                   1.2.7     2023-12-11 [1] CRAN (R 4.3.2)
+ RColorBrewer           1.1-3     2022-04-03 [1] CRAN (R 4.3.0)
+ Rcpp                 * 1.0.13    2024-07-17 [1] CRAN (R 4.3.2)
+ RcppParallel           5.1.7     2023-02-27 [1] CRAN (R 4.3.2)
+ RCurl                  1.98-1.13 2023-11-02 [1] CRAN (R 4.3.2)
+ readr                  2.1.4     2023-02-10 [1] CRAN (R 4.3.0)
+ remotes                2.4.2.1   2023-07-18 [1] CRAN (R 4.3.2)
+ reshape2               1.4.4     2020-04-09 [1] CRAN (R 4.3.0)
+ rlang                  1.1.4     2024-06-04 [1] CRAN (R 4.3.2)
+ Rsamtools            * 2.18.0    2023-10-24 [1] Bioconductor
+ RSQLite              * 2.3.4     2023-12-08 [1] CRAN (R 4.3.2)
+ S4Arrays               1.2.0     2023-10-24 [1] Bioconductor
+ S4Vectors            * 0.40.2    2023-11-23 [1] Bioconductor 3.18 (R 4.3.2)
+ scales                 1.3.0     2023-11-28 [1] CRAN (R 4.3.2)
+ sessioninfo            1.2.2     2021-12-06 [1] CRAN (R 4.3.2)
+ shiny                  1.8.0     2023-11-17 [1] CRAN (R 4.3.2)
+ ShortRead            * 1.60.0    2023-10-24 [1] Bioconductor
+ SparseArray            1.2.2     2023-11-07 [1] Bioconductor
+ stringi                1.8.3     2023-12-11 [1] CRAN (R 4.3.2)
+ stringr              * 1.5.1     2023-11-14 [1] CRAN (R 4.3.2)
+ SummarizedExperiment * 1.32.0    2023-10-24 [1] Bioconductor
+ systemfonts            1.0.5     2023-10-09 [1] CRAN (R 4.3.1)
+ textshaping            0.3.7     2023-10-09 [1] CRAN (R 4.3.1)
+ tibble                 3.2.1     2023-03-20 [1] CRAN (R 4.3.0)
+ tidyselect             1.2.1     2024-03-11 [1] CRAN (R 4.3.2)
+ tzdb                   0.4.0     2023-05-12 [1] CRAN (R 4.3.0)
+ urlchecker             1.0.1     2021-11-30 [1] CRAN (R 4.3.2)
+ usethis                2.2.2     2023-07-06 [1] CRAN (R 4.3.0)
+ utf8                   1.2.4     2023-10-22 [1] CRAN (R 4.3.1)
+ vctrs                  0.6.5     2023-12-01 [1] CRAN (R 4.3.2)
+ vroom                  1.6.5     2023-12-05 [1] CRAN (R 4.3.2)
+ withr                  3.0.1     2024-07-31 [1] CRAN (R 4.3.2)
+ xtable                 1.8-4     2019-04-21 [1] CRAN (R 4.3.0)
+ XVector              * 0.42.0    2023-10-24 [1] Bioconductor
+ zlibbioc               1.48.0    2023-10-24 [1] Bioconductor
+
+ [1] /home/scottjj/miniconda3/envs/R/lib/R/library
+
+```
+
+
+</details>
+
+

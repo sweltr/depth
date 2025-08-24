@@ -1,0 +1,197 @@
+---
+title: "SWELTR Depth Primer Removal"
+subtitle: "Scripts for primer removal using cutadapt for the 16S rRNA, ITS, AMF, & Oomycete datasets"
+---
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(magrittr)
+library(reactable)
+library(downloadthis)
+library(reactablefmtr)
+library(dada2)
+```
+
+# Workflow Overview
+
+This workflow uses cutadapt to remove primer sequences from the four amplicon datasets. Included are links to R scripts, associated processing files, and access to raw fastq files.
+
+Here is the basic rundown for renaming samples and removing primer pairs. All of the data and scripts you need can be downloaded below. 
+
+1. Download raw fastq files from figshare using the links in the table below. 
+2. Rename fastq files using the `rename.sh` script and the corresponding lookup table.
+3. Run the corresponding cutadapt R script to remove primers. 
+
+At this point your samples are ready for ASV calling. For a more detailed explaination of the workflow and access to summary data please see the **Workflow** section below.
+
+::: {.callout-note}
+For simplicity and consistency we use the abbreviation `SSU` or `ssu` to refer to the 16S rRNA dataset. We recognize that the small subunit (SSU) applies to multiple domains but here we specifically refer to Bacteria and Archaea. Further we use the abbreviations `ITS` or `its` for general fungi, `AMF` or `amf` for Arbuscular Mycorrhizal Fungi, and `OO` or `oo` for Oomycetes. 
+:::
+
+## Raw Data & Scripts
+
+Here is everything you need to run this workflow--raw data files, fastq renaming scripts and lookup tables, and cutadapt R scripts. 
+
+</br>
+
+{{< include include/_raw_data_and_scripts.qmd >}}
+
+</br>
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; rename.sh
+
+{{< downloadthis files/RENAME/rename.sh dname="rename" label="Bash script to rename samples" icon="code-slash" type="link" >}}
+
+:::
+
+</br>
+
+You can also download the scripts and lookup tables for each dataset from [figshare](https://figshare.com/s/532e2ab690d3c9b1ab43). 
+
+## Citable resources 
+
++-----------+-----------------------------+--------------------------------+
+| Dataset   | Forward primer              | Reverse Primer                 |
++===========+=============================+================================+
+| SSU       | GTGCCAGCMGCCGCGGTAA <br>    | GGACTACHVGGGTWTCTAAT  <br>     |
+|           | 515f [@caporaso2011global]  | 806r [@caporaso2011global]     |
++-----------+-----------------------------+--------------------------------+
+| ITS       | CTTGGTCATTTAGAGGAAGTAA <br> | GCTGCGTTCTTCATCGATGC  <br>     |
+|           | ITS1f [@gardes1993its]      | ITS2 [@white1990amplification] |
++-----------+-----------------------------+--------------------------------+
+| AMF       | AAGCTCGTAGTTGAATTTCG <br>   | CCCAACTATCCCTATTAATCAT <br>    |
+|           | AMV4-5NF [@sato2005new]     | AMDGR [@sato2005new]           |
++-----------+-----------------------------+--------------------------------+
+| Oomycete  | GGAAGGATCATTACCACA <br>     | GCTGCGTTCTTCATCGATGC <br>      |
+|           | ITS1oo [@riit2016oomycete]  | ITS2 [@white1990amplification] |
++-----------+-----------------------------+--------------------------------+
+
+: Primer pairs used for each dataset along with primer names and associated references. {tbl-colwidths="[20,40,40]"}
+
+#### Packages used in this workflow:
+
+1. [cutadapt](https://github.com/marcelm/cutadapt) [@martin2011cutadapt]
+
+</br>
+
+## References
+
+::: {#refs}
+:::
+
+# Workflow
+
+## Required Packages
+
+```{r}
+#| code-fold: true
+#| code-summary: "Click to see required packages"
+#| code-overflow: wrap
+set.seed(919191)
+library(dada2); packageVersion("dada2")
+library(ShortRead); packageVersion("ShortRead")
+library(Biostrings); packageVersion("Biostrings")
+library(gridExtra)
+library(grid)
+library(DECIPHER); packageVersion("DECIPHER")
+library(magrittr)
+library(tidyverse) # contains the following packages: dplyr, readr, forcats, stringr, ggplot2, tibble, lubridate, tidyr, purrr
+```
+
+## Rename fastq Files
+
+The first thing we did in this workflow is rename all fastq files so that the names are more informative. Here we generate sample names that contain the sample plot information, the soil depth, warming treatment, and sample pairing. To accomplish this we use a two column tab-delimited file (e.g., `ssu_rename.txt`) where the first column contains the original name (e.g., `SWELTR-9_R1.fastq.gz`) and the second column contains the new name (e.g., `P03-D00-010-W4B_R1.fastq.gz`). You can download this table above. 
+
+This handy bash script will rename all fastq files. 
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; rename.sh
+
+{{< downloadthis files/RENAME/rename.sh dname="rename" label="Bash script to rename samples" icon="code-slash" type="link" >}}
+
+:::
+
+<details>
+
+<summary>Click here to see the bash code for renaming fastq files.</summary>
+
+{{< include include/cutadapt/_rename_sh.qmd >}}
+
+</details>
+
+Simply run as such with the script by passing it a directory containing fastq files and a lookup table. 
+
+```{bash}
+bash rename.sh /path/to/fastq_files /path/to/rename_table
+```
+
+```
+`SWELTR-1_R1.fastq.gz' -> `P01-D00-010-W4A_R1.fastq.gz'
+`SWELTR-2_R1.fastq.gz' -> `P01-D10-020-W4A_R1.fastq.gz'
+`SWELTR-3_R1.fastq.gz' -> `P01-D20-050-W4A_R1.fastq.gz'
+`SWELTR-4_R1.fastq.gz' -> `P01-D50-100-W4A_R1.fastq.gz'
+`SWELTR-5_R1.fastq.gz' -> `P02-D00-010-C0A_R1.fastq.gz'
+`SWELTR-6_R1.fastq.gz' -> `P02-D10-020-C0A_R1.fastq.gz'
+```
+
+## Cutadapt Workflows
+
+In each tab below you can find the complete cutadapt workflow for each dataset. The worflows are nearly identical except for the the cutadapt parameters `--minimum-length` and `--maximum-length`. The differences are described here: 
+
++-----------+------------------+--------------------+
+| Dataset   | `minimum-length` | `maximum-length`   |
++===========+==================+====================+
+| SSU       | 200              | 300                |
++-----------+------------------+--------------------+
+| ITS       | 20               | 500                |
++-----------+------------------+--------------------+
+| AMF       | 100              | 300                |
++-----------+------------------+--------------------+
+| Oomycete  | 20               | 500                |
++-----------+------------------+--------------------+
+
+: Differences in cutadapt parameters for `--minimum-length` and `--maximum-length`. {tbl-colwidths="[30,30,30]"}
+
+</br>
+
+::: panel-tabset
+
+# SSU
+
+{{< include include/cutadapt/_cutadapt_primer_remove_ssu.qmd >}}
+
+# ITS
+
+{{< include include/cutadapt/_cutadapt_primer_remove_its.qmd >}}
+
+# AMF
+
+{{< include include/cutadapt/_cutadapt_primer_remove_amf.qmd >}}
+
+# Oomycete
+
+{{< include include/cutadapt/_cutadapt_primer_remove_oo.qmd >}}
+
+:::
+
+# Session Information
+
+```{r}
+sessionInfo()
+devtools::session_info()
+```
+
+<details>
+
+<summary>Click here for Session Information</summary>
+
+{{< include include/cutadapt/_session_info.qmd >}}
+
+</details>

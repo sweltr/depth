@@ -1,0 +1,50 @@
+---
+title: "SWELTR Depth Primer Removal"
+subtitle: "Scripts for primer removal using cutadapt for the 16S rRNA, ITS, AMF, & Oomycete datasets"
+title-block-banner: "#2271B2"
+title-block-banner-color: "#FEFEFE"
+format:
+  html: 
+    toc: true
+    toc-depth: 3
+    toc-expand: 3
+    number-sections: false
+    embed-resources: true
+    code-copy: true
+    code-overflow: wrap
+    code-link: true
+    code-tools:
+      source: true
+      toggle: false
+      caption: none
+    theme: cosmo
+    css: assets/styles.css
+bibliography: assets/cite.bib
+---
+
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+SAVE THIS FOR LATER
+
+```{=html}
+<iframe src="https://widgets.figshare.com/articles/20263857/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0" data-external="1"></iframe>
+```
+
+<iframe src="https://widgets.figshare.com/articles/20263857/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0" data-external="1"></iframe>

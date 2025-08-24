@@ -1,0 +1,25 @@
+---
+title: "The SWELTR Depth Study"
+description: |
+  **S**oil **W**arming **E**xperiment in **L**owland **T**ropical **R**ainforest
+#author:
+#  - name: "Andrew Nottingham"
+#    affiliation: University of Edinburgh
+#    affiliation-url: https://www.ed.ac.uk/
+#  - name: "Jarrod J Scott"
+#    orcid: 0000-0001-9863-1318
+#    url: https://metacrobe.github.io/
+#    affiliation: Smithsonian Tropical Research Institute
+#    affiliation-url: https://stri.si.edu/
+
+format:
+  html: 
+    code-tools: false    
+#    css: ["assets/css/styles_index.css", "assets/css/styles.css"]
+#title-block-banner: assets/banner.png
+---
+
+```{r}
+1 + 1
+```
+

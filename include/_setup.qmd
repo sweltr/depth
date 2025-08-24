@@ -1,0 +1,28 @@
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+
+# Load packages (optional)
+library(magrittr)
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(fontawesome)
+library(htmltools)
+library(R.utils)
+
+# Global knitr options (optional)
+#knitr::opts_chunk$set(
+#  echo = TRUE,
+#  eval = FALSE,
+#  warning = FALSE,
+#  message = FALSE
+#)
+
+# Load custom helper functions
+source(file.path("assets", "functions.R"))
+```
+

@@ -1,0 +1,49 @@
+Project ..........................................................: final_med
+Run date .........................................................: 25 Oct 24 14:35:21
+Library version ..................................................: 3.2
+Command line .....................................................: /home/scottjj/miniconda3/envs/oligotyping/bin/decompose pipelineFiles_med/final_med.pick.redundant.fasta_headers-replaced.fasta-TRIMMED -E mapping.txt --output-directory MED --number-of-threads 24
+Multi-threaded ...................................................: True
+Extraction info output file ......................................: MED/RUNINFO
+Log file path ....................................................: MED/RUNINFO.log
+Input file .......................................................: pipelineFiles_med/final_med.pick.redundant.fasta_headers-replaced.fasta-TRIMMED
+Mapping file .....................................................: MED/SAMPLE-MAPPING.txt
+Quick (and dirty) analysis requested .............................: False
+Merge homopolymer splits .........................................: False
+Skip removing outliers ...........................................: False
+Try to relocate outliers .........................................: False
+Store topology dict ..............................................: False
+Skip generating figures post analysis ............................: False
+Min entropy for a component to be picked for decomposition .......: 0.0965
+Perform entropy normalization heuristics .........................: True
+Max number of discriminants to use for decomposition .............: 4
+Min total abundance of oligotype in all samples ..................: 0
+Min substantive abundance of an oligotype (-M) ...................: 407
+Maximum variation allowed in each node (-V) ......................: 3
+Number of sequences analyzed .....................................: 2,034,729
+Average read length (without gaps) ...............................: 253
+Number of characters in each alignment ...........................: 552
+Output directory .................................................: MED
+Directory to store final nodes ...................................: MED/NODES
+Temporary files directory ........................................: MED/TMP
+Figures directory ................................................: MED/FIGURES
+Number of raw nodes (before the refinement) ......................: 350
+Outliers removed due to -M .......................................: 939,656
+Outliers removed due to -V .......................................: 174,126
+Total number of outliers removed during the refinement ...........: 1,113,782
+Number of samples found ..........................................: 39
+Number of final nodes (after the refinement) .....................: 350
+Number of sequences represented after quality filtering ..........: 920,947
+Final number of outliers due to -M ...............................: 939,656
+Final number of outliers due to -V ...............................: 174,126
+Final total number of outliers ...................................: 1,113,782
+Environment file .................................................: MED/ENVIRONMENT.txt
+Sample/oligotype abundance data matrix (counts) ..................: MED/MATRIX-COUNT.txt
+Sample/oligotype abundance data matrix (percents) ................: MED/MATRIX-PERCENT.txt
+Basic topology of MED nodes (txt) ................................: MED/TOPOLOGY.txt
+Basic topology of MED nodes ......................................: MED/TOPOLOGY.gexf
+Representative sequences per node ................................: MED/NODE-REPRESENTATIVES.fasta
+Read distribution among samples table ............................: MED/READ-DISTRIBUTION.txt
+End of run .......................................................: 25 Oct 24 14:50:41
+GEXF file for network analysis ...................................: MED/NETWORK.gexf
+figures_dict_file_path ...........................................: MED/FIGURES.cPickle
+exclusive_figures_dict_file_path .................................: MED/EXCLUSIVE-FIGURES.cPickle

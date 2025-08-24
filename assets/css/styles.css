@@ -1,0 +1,175 @@
+/* Whole document: */
+
+/********************************/
+/* controls CODE*/
+/********************************/
+
+/** pre.sourceCode controls code block without lang **/
+
+/** Controls r code  **/
+
+pre.sourceCode.r {
+   margin-top: 0px;
+   color: #333333;
+   background-color: #E8E8E8;
+   border-radius: 3px;
+   font-size: 0.90em;
+   font-family: 'Monaco', 'PT Mono', monospace;
+   overflow-x: scroll !important;
+   border-left: 6px solid #2271B2;
+   border-top: 1px solid #B7B7B7;
+   border-right: 1px solid #B7B7B7;
+   border-bottom: 1px solid #B7B7B7;
+   padding: 18px 0px 18px 20px;
+ }
+
+code.sourceCode.r {
+   border: none;
+   padding: 0px 0px 0px 0px;
+}
+
+code.sourceCode.R {
+   border: none;
+   padding: 0px 0px 0px 0px;
+ }
+
+/** Controls bash code  **/
+
+pre.sourceCode.bash {
+   margin-top: 0px;
+   color: #333333;
+   background-color: #E8E8E8;
+   border-radius: 3px;
+   font-size: 0.90em;
+   font-family: 'Monaco', 'PT Mono', monospace;
+   overflow-x: scroll !important;
+   border-left: 6px solid #4A4DB5;
+   border-top: 1px solid #B7B7B7;
+   border-right: 1px solid #B7B7B7;
+   border-bottom: 1px solid #B7B7B7;
+   padding: 18px 0px 18px 20px;
+}
+
+code.sourceCode.bash {
+   border: none;
+   padding: 0px 0px 0px 0px;
+ }
+
+/** Controls shell code  **/
+pre.sourceCode.zsh {
+  margin-top: 0px;
+  /*color: #333333;*/
+  /*background-color: #E8E8E8;*/
+  border-radius: 3px;
+  font-size: 0.95em;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  overflow-x: scroll !important;
+  border-left: 6px solid #009E73;
+  border-top: 1px solid #B7B7B7;
+  border-right: 1px solid #B7B7B7;
+  border-bottom: 1px solid #B7B7B7;
+  padding: 10px 0px 10px 10px;
+}
+
+code.sourceCode.zsh {
+  border: none;
+  padding: 0px 0px 0px 0px;
+}
+
+/** Controls verbatim code  **/
+pre.sourceCode {
+  margin-top: 0px;
+  /*color: #333333;*/
+  /*background-color: #E8E8E8;*/
+  border-radius: 3px;
+  font-size: 0.95em;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  overflow-x: scroll !important;
+  border-left: 6px solid #CC79A7;
+  border-top: 1px solid #B7B7B7;
+  border-right: 1px solid #B7B7B7;
+  border-bottom: 1px solid #B7B7B7;
+  padding: 10px 0px 10px 10px;
+}
+
+code.sourceCode {
+  border: none;
+  padding: 0px 0px 0px 0px;
+}
+
+/** Controls code output **/
+
+pre code {
+   margin-top: 0px;
+    color: #333333;
+    font-size: 0.9em;
+    border: 2px solid #ccc;
+    overflow-x: scroll !important;
+    padding:  10px 10px 10px 18px;
+    border-radius: 5px;
+  }
+
+p code:not(.sourceCode), li code:not(.sourceCode), td code:not(.sourceCode) {
+  background-color: unset;
+  padding: .2em;
+  font-size: 0.9em;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  }
+
+code {
+  color: #9954bb;
+  font-size: 0.90em;
+ }
+  
+/** Controls inline code  **/
+
+p code {
+  background-color: #E8E8E8;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  overflow-x: scroll !important;
+  margin-bottom: 20px;
+  color: #BF2727;
+}
+
+li code {
+  background-color: #E8E8E8;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  overflow-x: scroll !important;
+  margin-bottom: 20px;
+  color: #BF2727;
+}
+
+d-article aside code {
+  background-color: #E8E8E8;
+  border-radius: 3px;
+  font-family: 'Monaco', 'PT Mono', monospace;
+  color: #BF2727;
+}
+
+/** DETAILS fold down**/
+
+details {
+  background-color: #f6f6f6;
+  cursor: pointer;
+  color: #2d2d2d;
+  margin-bottom:1vh;
+  padding: 1em;
+  border: none;
+  text-align: left;
+  outline: none;
+}
+
+/********************************/
+/* controls CALLOUTS*/
+/********************************/
+
+
+div.callout-note.callout {
+    border-left: 10px solid;
+    border-left-color: #b1621c;
+
+}

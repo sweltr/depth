@@ -1,1 +1,16 @@
+
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+.DS_Store
+web.Rproj
+
+public_build/
 public/
+files/
+page_build/
+graphics/
+TESTING/
+_freeze/

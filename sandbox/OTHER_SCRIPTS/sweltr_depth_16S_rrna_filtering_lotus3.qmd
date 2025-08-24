@@ -1,0 +1,1066 @@
+---
+title: "SWELTR Depth 16S rRNA"
+subtitle: "Scripts for filtering LotuS3 ASV data "
+format:
+  html: 
+    code-copy: true
+    code-overflow: wrap
+    code-link: false
+    css: styles.css
+    embed-resources: true
+    code-tools:
+      source: true
+      toggle: false
+      caption: none
+      
+    theme: cosmo
+---
+
+```{r}
+#| message: false
+#| results: hide
+#| code-fold: true
+#| code-summary: "Click here for page build libraries and setup information."
+#| label: setup
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+set.seed(919191)
+library(PERFect)
+library(microeco)
+library(mia)
+library(phyloseq)
+library(microbiome)
+pacman::p_load(magrittr, reactable, reactablefmtr, 
+               janitor, tibble, readr,
+               install = FALSE, update = FALSE)
+
+options(scipen = 999)
+knitr::opts_current$get(c(
+  "cache",
+  "cache.path",
+  "cache.rebuild",
+  "dependson",
+  "autodep"
+))
+#root <- find_root(has_file("_quarto.yml"))
+#source(file.path(root, "assets", "functions.R"))
+objects()
+```
+
+
+```{r}
+#| echo: false
+#| eval: true
+rm(list = ls())
+load("16S/LOTUS3/lotus3_processing.rdata")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#| echo: true
+#| eval: false
+load("16S/LOTUS3/phyloseq.Rdata")
+objects()
+physeq
+me_asv <- readRDS("16S/LOTUS3/me_lotus3_asv.rds")
+objects()
+
+```
+
+
+```{r}
+data.frame(t(me_asv$otu_table))
+```
+
+```{r}
+tmp_tab <- data.frame(me_asv$otu_table)
+
+tmp_tab <- tmp_tab %>% tibble::rownames_to_column("ID")
+#tmp_tab <- jamba::mixedSortDF(tmp_tab, decreasing = FALSE, 
+#                                        useRownames = FALSE, byCols = 1)
+tmp_tab <- tmp_tab %>% tibble::remove_rownames() 
+tmp_tab <- tmp_tab %>% tibble::column_to_rownames("ID")
+tmp_tab <- data.frame(t(tmp_tab))
+
+tmp_tab_ord <- data.frame(me_asv$otu_table)
+tmp_tab_ord <- tmp_tab_ord %>% tibble::rownames_to_column("ID")
+tmp_tab_ord <- jamba::mixedSortDF(tmp_tab_ord, decreasing = TRUE, 
+                                        useRownames = FALSE, byCols = 1)
+tmp_tab_ord <- tmp_tab_ord %>% tibble::remove_rownames() 
+tmp_tab_ord <- tmp_tab_ord %>% tibble::column_to_rownames("ID")
+tmp_tab_ord <- data.frame(t(tmp_tab_ord))
+
+tmp_tab_ord_asc <- data.frame(me_asv$otu_table)
+tmp_tab_ord_asc <- tmp_tab_ord_asc %>% tibble::rownames_to_column("ID")
+tmp_tab_ord_asc <- jamba::mixedSortDF(tmp_tab_ord_asc, decreasing = FALSE, 
+                                        useRownames = FALSE, byCols = 1)
+tmp_tab_ord_asc <- tmp_tab_ord_asc %>% tibble::remove_rownames() 
+tmp_tab_ord_asc <- tmp_tab_ord_asc %>% tibble::column_to_rownames("ID")
+tmp_tab_ord_asc <- data.frame(t(tmp_tab_ord_asc))
+
+tmp_tab
+tmp_tab_ord
+tmp_tab_ord_asc
+#identical(colnames(tmp_get_tab), colnames(tmp_get_tab_ord))
+
+```
+
+```{r}
+ssu_per_pval <- 0.05
+```
+
+```{r}
+tmp_sim <- PERFect_sim(X = tmp_tab, alpha = ssu_per_pval, Order = "NP", center = FALSE)
+tmp_sim_ord <- PERFect_sim(X = tmp_tab_ord, alpha = ssu_per_pval, Order = "NP", center = FALSE)
+tmp_sim_ord_asc <- PERFect_sim(X = tmp_tab_ord_asc, alpha = ssu_per_pval, Order = "NP", center = FALSE)
+
+dim(tmp_sim$filtX)
+dim(tmp_sim_ord$filtX)
+dim(tmp_sim_ord_asc$filtX)
+
+
+
+tmp_sim_pvals <- data.frame(tmp_sim$pvals) %>%
+  tibble::rownames_to_column(var = "ASV_ID")
+tmp_sim_ord_pvals <- data.frame(tmp_sim_ord$pvals) %>%
+  tibble::rownames_to_column(var = "ASV_ID")
+tmp_sim_ord_asc_pvals <- data.frame(tmp_sim_ord_asc$pvals) %>%
+  tibble::rownames_to_column(var = "ASV_ID")
+
+
+tmp_pvals <- dplyr::full_join(tmp_sim_ord_asc_pvals, tmp_sim_ord_pvals, by = "ASV_ID") %>%
+  dplyr::full_join(., tmp_sim_pvals, by = "ASV_ID")
+write.table(tmp_pvals, "tmp_pvals.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+
+
+```{r}
+
+tmp_tab
+tmp_tab_ord
+tmp_tab_ord_asc
+tmp_tab_lc <- phyloseq::genefilter_sample(
+                                         as.matrix(t(tmp_tab)), 
+                                         filterfun_sample(function(x) x >= 5), 
+                                         A = 0.2 * 39)
+
+
+
+
+tmp_arb_bool <- data.frame(tmp_tab_lc) %>%
+  tibble::rownames_to_column(var = "ASV_ID")
+
+
+tmp_tab_lc_true <- data.frame(tmp_tab_lc) %>%
+  dplyr::filter(data.frame(tmp_tab_lc) == "TRUE")
+
+
+tmp_pvals <- dplyr::full_join(tmp_sim_ord_asc_pvals, tmp_sim_ord_pvals, by = "ASV_ID") %>%
+  dplyr::full_join(., tmp_sim_pvals, by = "ASV_ID") %>%
+  dplyr::full_join(., tmp_arb_bool, by = "ASV_ID")
+
+
+write.table(tmp_pvals, "tmp_pvals.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+tmp_low_count <- phyloseq::prune_taxa(tmp_low_count, ssu18_ps_work)
+tmp_low_var <- phyloseq::filter_taxa(tmp_low_count, 
+                                     function(x) var(x) > 0.2, prune = TRUE)
+ssu18_ps_filt <- tmp_low_var
+ssu18_ps_filt@phy_tree <- NULL
+tmp_tree <- rtree(ntaxa(ssu18_ps_filt), rooted = TRUE,
+                      tip.label = taxa_names(ssu18_ps_filt))
+ssu18_ps_filt <- merge_phyloseq(ssu18_ps_filt,
+                          sample_data,
+                          tmp_tree)
+
+rm(list = ls(pattern = "tmp_"))
+ssu18_ps_filt
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+tmp_df <- data.frame(t(otu_table(physeq)))
+
+tmp_counts <- mock2$Counts %>% as.matrix() %>% as.table()
+res_sim <- PERFect_sim(Counts)
+
+tmp_df1 <- adorn_totals(tmp_df, where = "col", name = "Sum")
+tmp_df1 <- as.data.frame(tibble::rownames_to_column(tmp_df1))
+new_df <- data.frame(tmp_df1[, c(1, ncol(tmp_df1))])
+write.table(new_df, "16S/LOTUS3/lotus3_otu.txt", row.names = FALSE,  sep = "\t", quote = FALSE)
+
+tmp_df1 <- readRDS("16S/DADA2/seqtab.nochim_pseudo.rds")
+tmp_df1 <- as.data.frame(tmp_df1)
+tmp_df1 <- adorn_totals(tmp_df1, where = "col", name = "Sum")
+tmp_df1 <- as.data.frame(tibble::rownames_to_column(tmp_df1))
+new_df <- data.frame(tmp_df1[, c(1, ncol(tmp_df1))])
+write.table(new_df, 16S/DADA2/"dada_otu.txt", row.names = FALSE,  sep = "\t", quote = FALSE)
+```
+
+```{r}
+data.frame(tax_table(physeq))
+physeq_tab <- data.frame(otu_table(physeq))
+physeq_tab <- physeq_tab %>% tibble::rownames_to_column("ID")
+#physeq_tab <- jamba::mixedSortDF(physeq_tab, decreasing = FALSE, 
+#                                      useRownames = FALSE, byCols = 1)
+physeq_tab <- physeq_tab %>% tibble::remove_rownames() 
+physeq_tab <- physeq_tab %>% tibble::column_to_rownames("ID")
+physeq_tab <- data.frame(t(physeq_tab))
+```
+
+```{r}
+physeq_tab_ord <- data.frame(otu_table(physeq))
+physeq_tab_ord <- physeq_tab_ord %>% tibble::rownames_to_column("ID")
+physeq_tab_ord <- jamba::mixedSortDF(physeq_tab_ord, decreasing = FALSE, 
+                                      useRownames = FALSE, byCols = 1)
+physeq_tab_ord <- physeq_tab_ord %>% tibble::remove_rownames() 
+physeq_tab_ord <- physeq_tab_ord %>% tibble::column_to_rownames("ID")
+physeq_tab_ord <- data.frame(t(physeq_tab_ord))
+```
+
+```{r}
+tmp_tab_name <- purrr::map_chr(i, ~ paste0(., "_perfect"))
+assign(tmp_tab_name, physeq_tab)
+
+tmp_tab_ord_name <- purrr::map_chr(i, ~ paste0(., "_ord_perfect"))
+assign(tmp_tab_ord_name, physeq_tab_ord)
+
+objects()
+```
+## Required Packages
+
+
+
+
+
+```
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 12091 taxa and 41 samples ]
+sample_data() Sample Data:       [ 41 samples by 14 sample variables ]
+tax_table()   Taxonomy Table:    [ 12091 taxa by 7 taxonomic ranks ]
+phy_tree()    Phylogenetic Tree: [ 12091 tips and 12089 internal nodes ]
+```
+
+```{r}
+#| echo: false
+#| eval: false
+min_read_ps <- min(readcount(physeq))
+max_read_ps <- max(readcount(physeq))
+total_reads_ps <- sum(readcount(physeq))
+mean_reads_ps <- round(mean(readcount(physeq)), digits = 0)
+median_reads_ps <- median(readcount(physeq))
+total_asvs_ps <- ntaxa(physeq)
+singleton_ps <- tryCatch(ntaxa(rare(physeq, detection = 1, 
+                                    prevalence = 0)), 
+                         error=function(err) NA)
+singleton_ps_perc <- tryCatch(round((100*(ntaxa(rare(physeq, detection = 1, prevalence = 0)) /
+                                   ntaxa(physeq))), digits = 3), error=function(err) NA)
+sparsity_ps <- round(length(which(abundances(physeq) == 0))/length(abundances(physeq)),
+                     digits = 3)
+
+ds_metrics <- data.frame(rbind(min_read_ps, max_read_ps, total_reads_ps, 
+                               mean_reads_ps, median_reads_ps, total_asvs_ps, 
+                               singleton_ps, singleton_ps_perc, sparsity_ps))
+```
+
+| Metric                              | Results                             |
+|-------------------------------------|-------------------------------------|
+| Min. number of reads                | `r ds_metrics[1, ]`                 |
+| Max. number of reads                | `r ds_metrics[2, ]`                 |
+| Total number of reads               | `r ds_metrics[3, ]`                 |
+| Average number of reads             | `r ds_metrics[4, ]`                 |
+| Median number of reads              | `r ds_metrics[5, ]`                 |
+| Total ASVs                          | `r ds_metrics[6, ]`                 |
+| Number of singleton ASVs            | `r ds_metrics[7, ]`                 |
+| Any ASVs sum to 1 or less?          | `r isTRUE(ds_metrics[7, ] >= 1)`    |
+| Percent of ASVs that are singletons | `r ds_metrics[8, ]`                 |
+| Sparsity                            | `r ds_metrics[9, ]`                 |
+
+In this next part of the workflow our main goal is to create a *microtable object* using the R package [microeco](https://chiliubio.github.io/microeco_tutorial/) [@liu2021microeco]. The microtable will be used to store the ASV by sample data as well the taxonomic, fasta, and sample data in a single object. More on that in a moment.
+
+We will also:
+
+-   Remove any ASVs without kingdom level classification.\
+-   Revome any contaminants (chloroplast, mitochondria, etc.).\
+-   Remove Negative Control (NC) samples.\
+-   Remove any low-count samples.
+
+## Sample Summary
+
+Before we begin, let's create a summary table containing some basic sample metadata and the read count data. We want to inspect how total reads changed through the workflow. Table headers are as follows:
+
+| Header         | Description                                             |
+|----------------|---------------------------------------------------------|
+| `SampleID`     | New sample ID based on plot, depth, treatment, & pair   |
+| `Plot`         | Experimental plot ID                                    |
+| `Treatment`    | Control vs warming                                      |
+| `Temp`         | Warming treatment temperature                           |
+| `Depth`        | Sampling depth in soil                                  |
+| `Pairing`      | Sample pairings                                         |
+| `raw_rc`       | No. of raw reads                                        |
+| `cutadapt_rc`  | Read count after cutdapt                                |
+| `final_rc`     | Read count after LotuS3 pipeline                        |
+| `no_asv`       | No. of ASVs                                             |
+
+<br/>
+
+Sample data 
+
+```{r}
+#| echo: true
+tmp_otu <- data.frame(otu_table(physeq))
+tmp_otu_sum <- data.frame(colSums(tmp_otu > 0)) %>%
+  tibble::rownames_to_column("SampleID")
+names(tmp_otu_sum)[2] <- "no_asv"
+tmp_read_sum <- data.frame(colSums(tmp_otu)) %>%
+  tibble::rownames_to_column("SampleID")
+names(tmp_read_sum)[2] <- "final_rc"
+tmp_track_reads <- read.table(
+    "16S/CUTADAPT/ssu_cutadapt_track.txt",
+    header = TRUE, sep = "\t"
+)
+
+tmp_track_reads$SampleID <- stringr::str_replace_all(
+  tmp_track_reads$SampleID, "-", "_")
+names(tmp_track_reads)[2] <- "raw_rc"
+names(tmp_track_reads)[3] <- "cutadapt_rc"
+#----------------/-------------------------#
+tmp_samp <- data.frame(sample_data(physeq)) %>% 
+  tibble::rownames_to_column("SampleID")
+#----------------/-------------------------#
+sample_tab <- dplyr::left_join(tmp_samp, tmp_track_reads, by = "SampleID") %>% 
+  dplyr::left_join(., tmp_read_sum, by = "SampleID") %>% 
+  dplyr::left_join(., tmp_otu_sum, by = "SampleID") 
+
+sample_tab <- sample_tab[, -c(2, 3, 9:15)]
+
+sample_tab$per_reads_kept <- round(sample_tab$final_rc/sample_tab$raw_rc, digits = 3)
+sample_tab <- sample_tab %>% dplyr::relocate(per_reads_kept, .before = no_asv)
+
+#rm(list = ls(pattern = "tmp_"))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+reactable(
+    sample_tab, defaultColDef = colDef(
+        header = function(value) gsub("_", " ", value, fixed = TRUE),
+        cell = function(value) format(value, nsmall = 0),
+        align = "center", filterable = TRUE, sortable = TRUE,
+        resizable = TRUE, footerStyle = list(fontWeight = "bold")
+    ),
+    columns = list(
+        SampleID = colDef(
+            name = "SampleID", sticky = "left", style = list(borderRight = "1px solid #eee"),
+            headerStyle = list(borderRight = "1px solid #eee"),
+            align = "left", minWidth = 150, footer = "Total reads"),
+        raw_rc = colDef(name = "raw rc", footer = function(values) sprintf("%.0f", sum(values))),
+        cutadapt_rc = colDef(name = "cutadapt rc", footer = function(values) sprintf("%.0f", sum(values))),
+        final_rc = colDef(name = "final rc", footer = function(values) sprintf("%.0f", sum(values))),
+        per_reads_kept = colDef(name = "per reads retain"),
+        no_asv = colDef(name = "total ASVs")
+    ),
+    searchable = TRUE, defaultPageSize = 5, pageSizeOptions = c(5, 10, nrow(sample_tab)),
+    showPageSizeOptions = TRUE, highlight = TRUE, bordered = TRUE,
+    striped = TRUE, compact = FALSE, wrap = FALSE, showSortable = TRUE,
+    fullWidth = TRUE, theme = reactableTheme(style = list(fontSize = "0.8em"))
+) %>%
+    reactablefmtr::add_subtitle(
+        "Sample metadata including read changes at start and end of workflow.",
+        font_size = 15
+    )
+```
+
+```{r}
+#| echo: false
+#| eval: false
+readr::write_delim(sample_tab, "16S/LOTUS3/sample_data_with_rc.txt",
+    delim = "\t")
+```
+
+</br>
+
+{{< downloadthis 16S/LOTUS3/sample_data_with_rc.txt dname=sample_data_with_rc label="Download sample metadata" icon=table type=info class=data-button id=shrimp_md >}}
+
+## Prep Data for `microeco`
+
+Like any tool, the microeco package needs the data in a specific form. I formatted our data to match the mock data in the microeco tutorial, specifically [this section](https://chiliubio.github.io/microeco_tutorial/basic-class.html#prepare-the-example-data).
+
+### A. Taxonomy Table
+
+Here is what the taxonomy table looks like in the mock data.
+
+```{r}
+#| eval: false
+#| echo: true
+tmp_tax <- data.frame(tax_table(physeq))
+tmp_tax[1:6, 1:4]
+```
+
+```         
+           Domain   Phylum      Class      Order
+ASV11944   Bacteria Bacillota   Bacilli    RES148
+ASV8741    Bacteria Bacillota_A Clostridia Christensenellales
+ASV11355   Bacteria Bacillota_A Clostridia Christensenellales
+ASV6303    Bacteria Bacillota_A Clostridia Christensenellales
+ASV9863    Bacteria Bacillota_A Clostridia Christensenellales
+ASV11366   Bacteria Bacillota_A Clostridia Christensenellales
+```
+
+Next we need to add rank definitions to each classification.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_tax <- data.frame(tax_table(physeq))   
+tmp_tax <- tmp_tax %>% dplyr::rename("Kingdom" = "Domain")
+tmp_tax <- tmp_tax %>%
+  dplyr::mutate_all(~stringr::str_replace_all(., "\\?", ""))
+
+tmp_tax$Kingdom <- paste("k", tmp_tax$Kingdom, sep = "__")
+tmp_tax$Phylum <- paste("p", tmp_tax$Phylum, sep = "__")
+tmp_tax$Class <- paste("c", tmp_tax$Class, sep = "__")
+tmp_tax$Order <- paste("o", tmp_tax$Order, sep = "__")
+tmp_tax$Family <- paste("f", tmp_tax$Family, sep = "__")
+tmp_tax$Genus <- paste("g", tmp_tax$Genus, sep = "__")
+tmp_tax$Species <- paste("s", tmp_tax$Species, sep = "__")
+```
+
+And now the final, modified taxonomy table.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_tax[1:6, 1:4]
+```
+
+```
+            Kingdom     Phylum          Class         Order
+ASV11944	  k__Bacteria	p__Bacillota	  c__Bacilli	  o__RES148
+ASV8741	    k__Bacteria	p__Bacillota_A	c__Clostridia	o__Christensenellales
+ASV11355	  k__Bacteria	p__Bacillota_A	c__Clostridia	o__Christensenellales
+ASV6303	    k__Bacteria	p__Bacillota_A	c__Clostridia	o__Christensenellales
+ASV9863	    k__Bacteria	p__Bacillota_A	c__Clostridia	o__Christensenellales
+ASV11366	  k__Bacteria	p__Bacillota_A	c__Clostridia	o__Christensenellales
+```
+
+### B. Sequence Table
+
+Here is what the sequence table looks like in the mock data.
+
+```{r}
+#| eval: false
+#| echo: true
+tmp_otu[1:6, 1:3]
+```
+
+```
+          P00_D00_000_NNN P01_D00_010_W4A P01_D10_020_W4A
+ASV11944                0	            1	            0	
+ASV8741	                0	            3            	1	
+ASV11355                0	            2	            0	
+ASV6303	                0	            5	            0	
+ASV9863	                0	            8	            1	
+ASV11366                0	            0	            0	
+```
+
+```{r}
+#| echo: true
+#| eval: false
+identical(row.names(tmp_otu), row.names(tmp_tax))
+```
+
+```
+[1] TRUE
+```
+
+### C. Sample Table
+
+Here is what the sample table looks like.
+
+```{r}
+#| eval: true
+#| echo: true
+head(sample_tab)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+sample_tab <- sample_tab %>% tibble::column_to_rownames("SampleID")
+sample_tab$SampleID <- rownames(sample_tab)
+sample_tab <- sample_tab %>% dplyr::relocate(SampleID)
+```
+
+And now the final, modified sample table.
+
+## Create a Microtable Object
+
+With these three files in hand we are now ready to create a microtable object.
+
+::: callout-note
+A microtable object contains an ASV table (taxa abundances), sample metadata, and taxonomy table (mapping between ASVs and higher-level taxonomic classifications).
+:::
+
+```{r}
+#| echo: true
+#| eval: false
+sample_info <- sample_tab
+tax_tab <- tmp_tax
+otu_tab <- tmp_otu
+```
+
+```{r}
+#| echo: true
+#| eval: false
+library(microeco)
+tmp_me <- microtable$new(sample_table = sample_info, 
+                         otu_table = otu_tab, 
+                         tax_table = tax_tab)
+
+```
+
+```         
+microtable-class object:
+sample_table have 41 rows and 11 columns
+otu_table have 12091 rows and 41 columns
+tax_table have 12091 rows and 7 columns
+```
+
+### Add Representative Sequence
+
+We can also add representative sequences for each OTU/ASV. For this step, we can simply grab the sequences from the row names of the DADA2 taxonomy object loaded above.
+
+
+```{r}
+#| echo: true
+#| eval: false
+rep_fasta <- Biostrings::readDNAStringSet("16S/LOTUS3/OTU.fna")
+identical(row.names(tmp_me$tax_table), row.names(tmp_me$otu_table))
+```
+
+```
+[1] TRUE
+```
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_fasta_names <- names(rep_fasta)
+tmp_rep_fasta <- rep_fasta[match(row.names(tmp_me$tax_table), tmp_fasta_names)]
+rep_fasta <- tmp_rep_fasta
+tmp_me$rep_fasta <- rep_fasta
+identical(row.names(tmp_me$tax_table), names(rep_fasta))
+tmp_me$tidy_dataset()
+```
+
+```
+[1] TRUE
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_raw <- microeco::clone(tmp_me)
+me_asv_raw
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_raw
+```
+
+> The microeco object `me_asv_raw` contains all data from the LotuS3 pipeline, before any dataset curation. 
+
+## Curate the Data Set
+
+Pretty much the last thing to do is remove unwanted taxa, negative controls, and low-count samples.
+
+### Remove any Kingdom NAs
+
+Here we can just use the straight up `subset` command since we do not need to worry about any ranks above Kingdom also being removed.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_no_na <- microeco::clone(tmp_me)
+tmp_no_na$tax_table %<>% 
+  base::subset(Kingdom == "k__Archaea" | Kingdom == "k__Bacteria")
+tmp_no_na$tidy_dataset()
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_no_na <- microeco::clone(tmp_no_na)
+me_asv_no_na
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_no_na
+```
+
+> The microeco object `me_asv_no_na` conatins only ASVs calssified as Archaea or Bacteria. 
+
+### Remove Contaminants
+
+Now we can remove any potential contaminants like mitochondria or chloroplasts.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_no_cont <- microeco::clone(tmp_no_na)
+tmp_no_cont$filter_pollution(taxa = c("mitochondria", "chloroplast"))
+tmp_no_cont$tidy_dataset()
+```
+
+```         
+Total 17 features are removed from tax_table ...
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_no_cont <- microeco::clone(tmp_no_cont)
+me_asv_no_cont
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_no_cont
+```
+
+> The microeco object `me_asv_no_cont` does not conatins contain ASVs calssified as mitochondria or chloroplast. 
+
+### Remove Negative Controls (NC)
+
+Now we need to remove the NC samples *and* ASVs found in those sample. We first identified all ASVs that were present in at least one NC sample represented by at least 1 read. We did this by subsetting the NC samples from the new microtable object.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_nc <- microeco::clone(tmp_no_cont)
+tmp_nc$sample_table <- subset(tmp_nc$sample_table, Treatment == "Negative")
+tmp_nc$tidy_dataset()
+```
+
+```
+11974 taxa with 0 abundance are removed from the otu_table ...
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_nc <- microeco::clone(tmp_nc)
+me_asv_nc
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_nc
+```
+
+> The microeco object `me_asv_nc` conatins only the negative control sample(s) and associated ASVs. 
+
+Looks like there are `r nrow(me_asv_nc$tax_table)` ASVs in the NC samples from a total of `r sum(me_asv_nc$taxa_sums())` reads.
+
+```{r}
+#| echo: true
+#| eval: false
+nc_asvs <- row.names(tmp_nc$tax_table)
+nc_asvs
+```
+
+```{r}
+#| echo: false
+#| eval: true
+nc_asvs
+```
+
+ASVs are numbered in order by total abundance in the data set so we know that many of the ASVs in the NC samples are not particularly abundant in the dataset. We can look at the abundance of these ASVs across all samples and compare it to the NC. This takes a bit of wrangling.
+
+Essentially, for each ASV, the code below calculates:
+
+-   The total number of NC samples containing at least 1 read.\
+-   The total number of reads in NC samples.\
+-   The total number of non-NC samples containing at least 1 read.\
+-   The total number of reads in non-NC samples.\
+-   The percent of reads in the NC samples and the percent of NC samples containing reads.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_rem_nc <- microeco::clone(tmp_no_cont)
+tmp_rem_nc_df <- tmp_rem_nc$otu_table
+tmp_rem_nc_df <- tmp_rem_nc_df %>% dplyr::filter(row.names(tmp_rem_nc_df) %in% nc_asvs)
+tmp_rem_nc_df <- tmp_rem_nc_df %>% tibble::rownames_to_column("ASV_ID")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_rem_nc_df <- tmp_rem_nc_df  %>% 
+  dplyr::mutate(total_reads_NC = rowSums(dplyr::select(., contains("NNN"))), 
+         .after = "ASV_ID")
+tmp_rem_nc_df <- dplyr::select(tmp_rem_nc_df, -contains("NNN"))
+tmp_rem_nc_df <- tmp_rem_nc_df %>%
+  dplyr::mutate(total_reads_samps = rowSums(.[3:ncol(tmp_rem_nc_df)]), 
+                .after = "total_reads_NC")
+tmp_rem_nc_df[, 4:ncol(tmp_rem_nc_df)] <- list(NULL)
+tmp_rem_nc_df <- tmp_rem_nc_df %>%
+  dplyr::mutate(perc_in_neg = 100*(
+    total_reads_NC / (total_reads_NC + total_reads_samps)),
+                .after = "total_reads_samps")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_rem_nc_df$perc_in_neg <- round(tmp_rem_nc_df$perc_in_neg, digits = 6)
+
+tmp_1 <- data.frame(rowSums(tmp_rem_nc$otu_table != 0))
+tmp_1 <- tmp_1 %>% tibble::rownames_to_column("ASV_ID")
+tmp_1 <- tmp_1 %>% dplyr::rename("total_samples" = 2)  
+
+tmp_2 <- dplyr::select(tmp_rem_nc$otu_table, contains("NNN"))
+tmp_2$num_samp_nc <- rowSums(tmp_2 != 0)
+tmp_2 <- dplyr::select(tmp_2, contains("num_samp_nc"))
+tmp_2 <- tmp_2 %>% tibble::rownames_to_column("ASV_ID")
+
+tmp_3 <- dplyr::select(tmp_rem_nc$otu_table, -contains("NNN"))
+tmp_3$num_samp_no_nc <- rowSums(tmp_3 != 0)
+tmp_3 <- dplyr::select(tmp_3, contains("num_samp_no_nc"))
+tmp_3 <- tmp_3 %>% tibble::rownames_to_column("ASV_ID")
+
+tmp_rem_nc_df <- dplyr::left_join(tmp_rem_nc_df, tmp_1) %>%
+                 dplyr::left_join(., tmp_2) %>%
+                 dplyr::left_join(., tmp_3)
+
+tmp_rem_nc_df <- tmp_rem_nc_df %>%
+  dplyr::mutate(perc_in_neg_samp = 100*( num_samp_nc / (num_samp_nc + num_samp_no_nc)),
+                .after = "num_samp_no_nc")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+nc_check <- tmp_rem_nc_df
+```
+
+```{r}
+#| echo: false
+#| eval: true
+  reactable(nc_check,
+  defaultColDef = colDef(
+    header = function(value) gsub("_", " ", value, fixed = TRUE),
+    #cell = function(value) format(value, nsmall = 0),
+    align = "center", filterable = FALSE, sortable = TRUE, resizable = TRUE,
+    footerStyle = list(fontWeight = "bold")
+    ), 
+  columns = list(
+    ASV_ID = colDef(name = "ASV ID", 
+                       sticky = "left", 
+                       style = list(borderRight = "1px solid #eee"),
+                       headerStyle = list(borderRight = "1px solid #eee"), 
+                       align = "left",
+                       minWidth = 100),
+  total_reads_NC = colDef(name = "reads in NC"),
+  total_reads_samps = colDef(name = "reads in non NC"),
+  perc_in_neg = colDef(name = "% in NC", format = colFormat(digits = 4)),
+  total_samples = colDef(name = "total samples"),
+  num_samp_nc = colDef(name = "Total NC samples"),
+  num_samp_no_nc = colDef(name = "Total non-NC samples"),
+  perc_in_neg_samp = colDef(name = "% of samples", format = colFormat(digits = 4))
+  ),
+  searchable = FALSE, defaultPageSize = 11, 
+  pageSizeOptions = c(5, 10, nrow(nc_check)), 
+  showPageSizeOptions = TRUE, highlight = TRUE, 
+  bordered = TRUE, striped = TRUE, compact = FALSE, 
+  wrap = FALSE, showSortable = TRUE, fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))) %>%
+  reactablefmtr::add_subtitle("Summary of ASVs detected in Negative Control (NC) samples.", 
+                              font_size = 15)
+```
+
+```{r}
+#| echo: false
+#| eval: false
+write_delim(nc_check, "16S/LOTUS3/asv_in_nc_samples.txt",
+    delim = "\t")
+```
+
+{{< downloadthis 16S/LOTUS3/asv_in_nc_samples.txt dname=asv_in_nc_samples label="Download summary of ASVs detected in Negative Control (NC) samples" icon=table type=info class=data-button id=asv_in_nc_samples >}}
+
+Looking at these data we can see that ASVs like ASV1 are only represented by a really small number of NC reads and samples. On the other hand, ASVs such as ASV6060, ASV9669, and ASV9992 are very abundant in NC samples. We decided to remove ASVs if:
+
+-   The number of reads found in NC samples accounted for more than 10% of total reads OR
+-   The percent of NC samples containing the ASV was greater than 10% of total samples.
+
+```{r}
+#| echo: true
+#| eval: false
+nc_remove <- nc_check %>% 
+  dplyr::filter(perc_in_neg > 10 | perc_in_neg_samp > 10)
+#tmp_rem_asv <- nc_remove$ASV_ID %>% 
+#  unlist(strsplit(., split = ", ")) 
+```
+
+```{r}
+#| echo: false
+#| eval: false
+nc_remain <- dplyr::anti_join(nc_check, nc_remove)
+
+rem_nc_reads <- sum(nc_remove$total_reads_NC)
+rem_sam_reads <- sum(nc_remove$total_reads_samps)
+per_reads_rem <- round(100*( rem_nc_reads / (rem_nc_reads + rem_sam_reads)), 
+                       digits = 3)
+
+ret_nc_reads <- sum(nc_remain$total_reads_NC)
+ret_sam_reads <- sum(nc_remain$total_reads_samps)
+per_reads_ret <- round(100*( ret_nc_reads / (ret_nc_reads + ret_sam_reads)), 
+                       digits = 3)
+```
+
+|          | Total ASVs          | NC reads         | non NC reads      | \% NC reads       |
+|----------|---------------------|------------------|-------------------|-------------------|
+| Removed  | `r nrow(nc_remove)` | `r rem_nc_reads` | `r rem_sam_reads` | `r per_reads_rem` |
+| Retained | `r nrow(nc_remain)` | `r ret_nc_reads` | `r ret_sam_reads` | `r per_reads_ret` |
+
+We identified a total of `r nrow(nc_check)` ASVs that were present in at least 1 NC sample by at least 1 read. We removed any ASV where more than 10% of total reads were found in NC samples OR any ASV found in more than 10% of NC samples. Based on these criteria we removed `r nrow(nc_remove)` ASVs from the data set, which represented `r rem_nc_reads` total reads in NC samples and `r rem_sam_reads` total reads in non-NC samples. Of the total reads removed `r per_reads_rem`% came from NC samples. Of all ASVs identified in NC samples,`r nrow(nc_remain)` were retained because the fell below the threshhold criteria. These ASVs accounted for `r ret_nc_reads` reads in NC samples and `r ret_sam_reads` reads in non-NC samples. NC samples accounted for `r per_reads_ret`% of these reads.
+
+OK, now we can remove the NC samples and any ASVs that met our criteria described above.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_no_nc <- microeco::clone(tmp_no_cont)
+
+tmp_rem_asv <- as.factor(nc_remove$ASV_ID)
+tmp_no_nc$otu_table <- tmp_rem_nc$otu_table %>% 
+  dplyr::filter(!row.names(tmp_no_nc$otu_table) %in% tmp_rem_asv)
+tmp_no_nc$tidy_dataset()
+
+tmp_no_nc$sample_table <- subset(tmp_no_nc$sample_table, 
+                                 Treatment != "Negative")
+tmp_no_nc$tidy_dataset()
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_no_nc <- microeco::clone(tmp_no_nc)
+me_asv_no_nc
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_no_nc
+```
+
+> The microeco object `me_asv_no_nc` does not conatins the negative control sample(s). 
+
+### Remove Low-Count Samples
+
+Next, we can remove samples with really low read counts---here we set the threshold to `1000` reads.
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_no_low <- microeco::clone(tmp_no_nc)
+tmp_no_low$otu_table <- tmp_no_nc$otu_table %>%
+          dplyr::select(where(~ is.numeric(.) && sum(.) >= 1000))
+tmp_no_low$tidy_dataset()
+```
+
+Check if any row sum (i.e., ASVs) is equal to 0 after removing the negative control sample(s).
+
+```{r}
+tmp_row_sums <- rowSums(tmp_no_low$otu_table)
+any(tmp_row_sums == 0)
+```
+
+```
+[1] FALSE
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv_no_low <- microeco::clone(tmp_no_low)
+me_asv_no_low
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv_no_low
+```
+
+> The microeco object `me_asv_no_low` does not conatins the low abundance samples. 
+
+Giving us the final microtable object.
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv <- microeco::clone(me_asv_no_low)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+me_asv
+```
+
+## Summary
+
+Now time to summarize the data. For this we use the R package [miaverse](https://microbiome.github.io) [@felix2024mia].
+
+```{r}
+#| echo: false
+#| eval: false
+identical(rownames(me_asv_raw$sample_table), colnames(me_asv_raw$otu_table))
+identical(rownames(me_asv$sample_table), colnames(me_asv$otu_table))
+```
+
+First we do a little formatting to get our data compatible with mia.
+
+```{r}
+#| echo: true
+#| eval: false
+# https://github.com/microbiome/OMA/issues/202
+tmp_counts <- as.matrix(me_asv_raw$otu_table)
+tmp_assays <-  SimpleList(counts = tmp_counts)
+mia_me_asv_raw <- TreeSummarizedExperiment(assays = tmp_assays,
+                                colData = DataFrame(me_asv_raw$sample_table),
+                                rowData = DataFrame(me_asv_raw$tax_table))
+rm(list = ls(pattern = "tmp_"))
+tmp_counts <- as.matrix(me_asv$otu_table)
+tmp_assays <-  SimpleList(counts = tmp_counts)
+mia_me_asv <- TreeSummarizedExperiment(assays = tmp_assays,
+                                colData = DataFrame(me_asv$sample_table),
+                                rowData = DataFrame(me_asv$tax_table))
+mia_me_asv_raw_summ <- summary(mia_me_asv_raw, assay.type = "counts")
+mia_me_asv_summ <- summary(mia_me_asv, assay.type = "counts")
+rm(list = ls(pattern = "tmp_"))
+```
+
+```{r}
+#| echo: false
+#| eval: false
+me_dataset <- c("original", "No NA kingdom",
+                "no contaminants", "no neg control", 
+                "no low count samps"
+                )
+
+total_asvs <- c(
+                nrow(me_asv_raw$tax_table), 
+                nrow(me_asv_no_na$tax_table), 
+                nrow(me_asv_no_cont$tax_table), 
+                nrow(me_asv_no_nc$tax_table), 
+                nrow(me_asv_no_low$tax_table)
+                )
+
+total_reads <- c(
+                sum(me_asv_raw$sample_sums()), 
+                sum(me_asv_no_na$sample_sums()), 
+                sum(me_asv_no_cont$sample_sums()), 
+                sum(me_asv_no_nc$sample_sums()),
+                sum(me_asv_no_low$sample_sums())
+                )
+
+total_samples <- c(
+                nrow(me_asv_raw$sample_table), 
+                nrow(me_asv_no_na$sample_table), 
+                nrow(me_asv_no_cont$sample_table), 
+                nrow(me_asv_no_nc$sample_table), 
+                nrow(me_asv_no_low$sample_table) 
+                )
+pipe_summary <- data.frame(cbind(me_dataset, total_asvs, 
+                                 total_reads, total_samples
+                                 )
+                           )
+```
+
+```{r}
+#| echo: false
+#| eval: true
+pipe_summary
+```
+
+
+| Metric                | Start                                      | End                                    |
+|-----------------------|--------------------------------------------|----------------------------------------|
+| Min. number reads     | `r mia_me_asv_raw_summ$samples[2]`         | `r mia_me_asv_summ$samples[2]`         |
+| Max. number reads     | `r mia_me_asv_raw_summ$samples[3]`         | `r mia_me_asv_summ$samples[3]`         |
+| Total number reads    | `r mia_me_asv_raw_summ$samples[1]`         | `r mia_me_asv_summ$samples[1]`         |
+| Avg number reads      | `r round(mia_me_asv_raw_summ$samples[5])`  | `r round(mia_me_asv_summ$samples[5])`  |
+| Median no. reads      | `r mia_me_asv_raw_summ$samples[4]`         | `r mia_me_asv_summ$samples[4]`         |
+| Total ASVs            | `r mia_me_asv_raw_summ$features[1]`        | `r mia_me_asv_summ$features[1]`        |
+| No. singleton ASVs    | `r mia_me_asv_raw_summ$features[2]`        | `r mia_me_asv_summ$features[2]`        |
+| Avg ASVs per sample.  | `r round(mia_me_asv_raw_summ$features[3])` | `r round(mia_me_asv_summ$features[3])` |
+
+We started off with `r nrow(me_asv_raw$tax_table)` ASVs and `r nrow(me_asv_raw$sample_table)` samples. Screening for `NA` kingdom assignment removed an additional `r nrow(me_asv_raw$tax_table) - nrow(me_asv_no_na$tax_table)` ASVs. Screening for Mitochondria and Chloroplast removed `r nrow(me_asv_no_na$tax_table) -  nrow(me_asv_no_cont$tax_table)` ASVs. After removing the negative controls there were `r nrow(me_asv_no_nc$tax_table)` ASVs and `r nrow(me_asv_no_nc$sample_table)`. After removing low-count samples, there were `r nrow(me_asv$tax_table)` ASVs and `r nrow(me_asv$sample_table)` samples remaining.
+
+```{r}
+#| echo: false
+#| eval: false
+objects()
+gdata::keep(ds_metrics, sample_tab, sample_info, tax_tab, otu_tab, 
+            me_asv_raw, me_asv_no_na, me_asv_no_cont, me_asv_nc, 
+            me_asv_no_nc, me_asv_no_low, me_asv, nc_asvs, nc_check, 
+            nc_remove, nc_remain, rem_nc_reads, rem_sam_reads, per_reads_rem, 
+            per_reads_ret, ret_nc_reads, ret_sam_reads, mia_me_asv_raw, 
+            mia_me_asv, mia_me_asv_raw_summ, mia_me_asv_summ, pipe_summary,
+            sure = TRUE)
+rm(list = ls(pattern = "tmp_"))
+save.image("16S/LOTUS3/lotus3_processing.rdata")
+```
+

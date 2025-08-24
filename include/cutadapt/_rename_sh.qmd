@@ -1,0 +1,35 @@
+```{bash}
+#!/usr/bin/env bash
+
+# Check arguments
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 /path/to/files/ rename_file.txt"
+    exit 1
+fi
+
+data_dir="$1"
+rename_file="$2"
+
+# Validate directory
+if [[ ! -d "$data_dir" ]]; then
+    echo "Error: Directory '$data_dir' not found!"
+    exit 1
+fi
+
+# Validate rename file
+if [[ ! -f "$rename_file" ]]; then
+    echo "Error: File '$rename_file' not found!"
+    exit 1
+fi
+
+# Get root name (strip directory and extension)
+base_name=$(basename "$rename_file" .txt)
+output_file="${base_name}_results.txt"
+
+# Perform renaming inside given directory
+while IFS=$'\t' read -r orig new; do 
+    rename -v "$orig" "$new" "$data_dir"/*.fastq.gz
+done < "$rename_file" | tee "$output_file"
+
+echo "Results written to: $output_file"
+```
