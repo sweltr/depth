@@ -20,6 +20,142 @@ format:
 ---
 
 ```{r}
-1 + 1
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
+## Access to Data & Scripts
+
+Here I provide quick access to data and scripts depending on where you want to start your analysis. I list these in reverse order--beginning with the curated datasets ready for analysis and ending with the raw, unprocessed, fastq data. In each section I provide the relevant data, scripts, and tables. I also link to detailed explanations of each workflow. 
+
+### 4. Processed Data
+
+Data provided here is the output of the [Data Curation](#data-curation) workflow. **These data are ready for analysis**.
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; ssu_curated_data.zip
+
+{{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="16S rRNA curated data" icon="code-slash" type="link" >}}
+
+This `.zip` file contains the processed data in different formats:
+
+- `ssu_otu_table.txt`: ASV by sample abundance table. 
+- `ssu_tax_table.txt`: ASV taxonomic assignments. 
+- `ssu_sample_table.txt`: Sample data table
+- `ssu_rep_fasta.fasta`: Representative ASV fasta sequences.
+
+These files each contain all four tables descriped above. 
+
+- `ssu_me_asv.rds`: microtable object from the R [microeco](https://chiliubio.github.io/microeco_tutorial/) package.
+- `ssu_ps_asv.rds`: phyloseq object from the R [phyloseq](https://joey711.github.io/phyloseq/) package
+
+:::
+
+> As of  `r Sys.Date()` I have only done this for the SSU (16S rRNA) dataset. The rest are coming soon. 
+
+### 3. Data Curation
+
+At this stage fastq files have been [renamed and primers removed](#primer-removal) and [ASVs have been called with LotuS3](#primer-removal). In this workflow I use the phyloseq output from LotuS3 to format the otu, taxonomy, and sample data tables to create a microeco object. Once that is complete I curate the dataset by removing possible contaminants, negative control samples, NA kingdoms, and low-count samples.  
+
+> As of  `r Sys.Date()` I have only done this for the SSU (16S rRNA) dataset. The rest are coming soon. 
+
+Grab this data if you:
+
+a. want to curate the data yourself or   
+b. want to see the data before any spurious ASVs or samples were removed. 
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; phyloseq_ssu.Rdata
+
+{{< downloadthis files/CURATE/phyloseq_ssu.Rdata dname="phyloseq_ssu" label="LotuS3 phyloseq data" icon="code-slash" type="link" >}}
+
+:::
+
+
+::: {.callout-warning icon=false}
+
+## Workflow
+
+For a more detailed explanation please see the [SSU Data Curation](curate_ssu.qmd) workflow. 
+
+:::
+
+
+### 2. ASV Inference
+
+Once primer removal is complete you can call ASVs with LotuS3. Here you can find all you need to do this--trimmed fastq files (primers removed), mapping files, and LotuS3 commands. 
+
+{{< include include/_lotus3_data_and_scripts.qmd >}}
+
+Once you have the data and mapping files you can run the following commands (assuming yiu have LotuS3 installed).
+
+```
+
+# SSU dataset
+lotus3 -i . -map ssu_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer GTGCCAGCMGCCGCGGTAA -reversePrimer GGACTACHVGGGTWTCTAAT -clustering dada2 -refDB SLV -taxAligner lambda -threads 20
+
+# ITS dataset
+lotus3 -i . -map its_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS  -forwardPrimer CTTGGTCATTTAGAGGAAGTAA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
+
+#AMF dataset
+lotus3 -i .-map amf_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer AAGCTCGTAGTTGAATTTCG -reversePrimer CCCAACTATCCCTATTAATCAT -clustering dada2 -refDB SLV -taxAligner lambda -t 20
+
+# Oomycete dataset
+lotus3 -i . -map oo_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS -forwardPrimer GGAAGGATCATTACCACA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
+
+
+```
+
+::: {.callout-warning icon=false}
+
+## Workflow
+
+For a more detailed explanation please see the [ASV Inference](lotus3.qmd) workflow. 
+
+:::
+
+
+### 1. Primer Removal
+
+Want to start at the very beginning? Here are the raw fastq files, fastq renaming script, and cutadapt primer removal scripts. 
+
+{{< include include/_raw_data_and_scripts.qmd >}}
+
+</br>
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; rename.sh
+
+{{< downloadthis files/RENAME/rename.sh dname="rename" label="Bash script to rename samples" icon="code-slash" type="link" >}}
+
+:::
+
+Steps to reproduce results:
+
+a. Run the  script `rename.sh` to rename the fastq files. 
+
+```{bash}
+#| eval: false
+#| echo: true
+bash rename.sh /path/to/fastq_files /path/to/rename_table
+```
+
+b. Run the cutadapt script (e.g., `1_cut_ssu.R`) using the renamed fastq file directory. 
+
+```{bash}
+Rscript 1_cut_ssu.R
+```
+
+::: {.callout-warning icon=false}
+
+## Workflow
+
+For a more detailed explanation please see the [Primer Removal](primers.qmd) workflow. 
+
+:::

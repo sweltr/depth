@@ -1,0 +1,467 @@
+---
+title: "ASV Inference"
+subtitle: "Scripts for ASV processing using the LotuS3 pipeline"
+format:
+  html:
+    other-links: 
+      - text: Data
+        href: https://doi.org/10.25573/data.16828063
+---
+
+{{< include include/_setup.qmd >}}
+
+```{r}
+#| echo: false
+#| eval: true
+source("assets/custom_scripts/make_pipeline_table.R")
+```
+
+# Overview
+
+This workflow uses the [LotuS3](https://github.com/hildebra/lotus3/) pipeline to infer ASVs, remove chimeric reads, and assign taxonomy. Included are links to R scripts and associated processing files. 
+
+## Data & Scripts
+
+Here is everything you need to run this workflow:
+
+</br>
+
+{{< include include/_lotus3_data_and_scripts.qmd >}}
+
+</br>
+
+Once you have the trimmed fastq files, the mapping files, and have LotuS3 installed, you can execute the following commands to run the pipelines. 
+
+
+::: {.callout-note}
+For the ITS and Oomycete datasets I used a custom formatted taxon DB. See the section on creating a [custom  formatted database](#create-custom-taxon-db) to find the code I used for this. 
+:::
+
+```
+
+SSU
+lotus3 -i . -map ssu_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer GTGCCAGCMGCCGCGGTAA -reversePrimer GGACTACHVGGGTWTCTAAT -clustering dada2 -refDB SLV -taxAligner lambda -threads 20
+
+ITS
+lotus3 -i . -map its_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS  -forwardPrimer CTTGGTCATTTAGAGGAAGTAA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
+
+AMF
+lotus3 -i .-map amf_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer AAGCTCGTAGTTGAATTTCG -reversePrimer CCCAACTATCCCTATTAATCAT -clustering dada2 -refDB SLV -taxAligner lambda -t 20
+
+Oomycete
+lotus3 -i . -map oo_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS -forwardPrimer GGAAGGATCATTACCACA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
+
+
+```
+
+For a full description of each workflow and summaries of the results, please see the relevant sections below. 
+
+## Citable resources 
+
+#### Tools used in the LotuS3 workflow:
+
+::: {.border}
+
+1. LotuS3  An ultrafast and highly accurate tool for amplicon sequencing analysis [@ozkurt2022lotus2]. 
+2. DADA2 ASV clustering [@callahan2016dada2].
+3. VSEARCH v2.30.0 (chimera de novo / ref; OTU alignments) [@rognes2016vsearch].
+4. Poisson binomial model based read filtering [@puente2016novel].
+5. Offtarget removal (against phiX) [@bedarf2021much].
+6. minimap2 v2.30 used in offtarget aligments [@li2018minimap2].
+7. LULU multicopy rRNA removal [@froslev2017algorithm].
+8. Lambda3 taxonomic similarity search [@hauswedell2024lambda3].
+9. KSGP SSU specific tax database (for SSU workflow) [@grant2023improved].
+10. ITSx v1.3 removal of non ITS OTUs (for ITS and Oomycete workflows) [@bengtsson2013improved]
+11. SILVA 16S/18S database (for AMF workflow) [@yilmaz2014silva]
+12. R microeco package [@liu2021microeco]. 
+13. phyloseq R package [@mcmurdie2013phyloseq].
+14. SeqKit2 for sequence and alignment processing [@shen2024seqkit2]
+
+:::
+
+</br>
+
+## References
+
+::: {#refs}
+:::
+
+# LotuS3 Workflow
+
+The `lotus3` command requires a few user provided files and and inputs. Here you will find a more detailed explanation of the parameters we used. There are many more options available for customizing the pipeline.
+
+::: {.border}
+
+- **-i** input directory (uses mapping file). 
+- **-map** mapping file   
+- **-o** output directory
+- **-sdmopt** SDM option file, defaults to "configs/sdm_miSeq.txt" in current dir. *This file is installed with the LotuS3 package.*
+- **-p** sequencing platform: PacBio, PacBio_GA, 454, AVITI, miSeq or hiSeq.
+- **-amplicon_type** <SSU|LSU|ITS|ITS1|ITS2|custom>
+- **-forwardPrimer** forward primer
+- **-reversePrimer** reverse primer
+- **-clustering** sequence clustering algorithm: (1) UPARSE, (2) swarm, (3) cd-hit, (6) unoise3, (7) dada2, (8) VSEARCH. 
+- **-refDB** <KSGP|SLV|GG2|HITdb|PR2|UNITE|beetax> Can also be a [custom  formatted database](#create-custom-taxon-db)
+- **-tax4refDB** <file> In conjunction with a custom fasta file provided to argument -refDB, this file contains for each fasta entry in the reference DB a taxonomic annotation string, with the same number of taxonomic levels for each, tab separated.
+- **-taxAligner** <0|blast|lambda|utax|sintax|vsearch|usearch>
+- **-threads** number of threads to be used. 
+:::
+
+::: {.callout-warning}
+The structure and content of the mapping file is very important. Please consult the LotuS documentation for more details. 
+:::
+
+## Create Custom Taxon DB
+
+A note on making a custom taxonomy database for the ITS/Oomycete analysis. For this I first downloaded the [sh_general_release_dynamic_s_all_19.02.2025_dev.fasta](https://doi.plutof.ut.ee/doi/10.15156/BIO/3301232). Then I used a combination of command line code and [seqkit](https://bioinf.shenwei.me/seqkit/) [@shen2024seqkit2] to properly format the database for the LotuS3 pipeline. 
+
+```{bash}
+conda activate seqkit
+cp sh_general_release_dynamic_s_all_19.02.2025_dev.fasta tmp.fasta
+```
+
+```{bash}
+seqkit seq --name tmp.fasta --out-file tmp.tax
+```
+
+Where...
+
+::: {.border}
+
+- **-n, --name**  only print names/sequence headers.  
+- **-o, --out-file** string out file ("-" for stdout, suffix .gz for gzipped out) (default "-").  
+
+:::
+
+```{bash}
+sed 's/|[^|]*$/\t&/; s/\t|/\t/' tmp.tax > \
+                      lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax
+```
+
+```{bash}
+seqkit replace tmp.fasta  --line-width 0 
+                          --pattern "refs_singleton\|.*" 
+                          --replacement "refs_singleton" 
+                          --out-file tmp1.fasta
+seqkit replace tmp1.fasta --line-width 0 
+                          --pattern "refs\|.*" 
+                          --replacement "refs" 
+                          --out-file tmp2.fasta
+seqkit replace tmp2.fasta --line-width 0 
+                          --pattern "reps_singleton\|.*" 
+                          --replacement "reps_singleton" 
+                          --out-file tmp3.fasta
+seqkit replace tmp3.fasta --line-width 0 
+                          --pattern "reps\|.*" 
+                          --replacement "reps" 
+                          --out-file 
+                  lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta 
+rm tmp*
+```
+
+::: {.border}
+
+- **-w, --line-width**  <int> line width when outputting FASTA format (0 for no wrap) (default 60)
+- **- -p, --pattern**  <string>  search regular expression
+- **-r, --replacement**  <string>  replacement. supporting capture variables
+- **-o, --out-file** <string> out file ("-" for stdout, suffix .gz for gzipped out) (default "-")
+
+:::
+
+At this point we now have a formated taxonomy database for the analysis. 
+
+## Individual Workflow
+
+::: panel-tabset
+
+# SSU
+
+Here is the command used to analyze the SSU dataset. 
+
+```{bash}
+lotus3 -i . \
+       -map ssu_miSeqMap.sm.txt \
+       -o LOTUS3_ASV \
+       -sdmopt sdm_miSeq.txt \
+       -p miSeq \
+       -amplicon_type SSU  \
+       -forwardPrimer GTGCCAGCMGCCGCGGTAA \
+       -reversePrimer GGACTACHVGGGTWTCTAAT \
+       -clustering dada2 \
+       -refDB SLV \
+       -taxAligner lambda \
+       -threads 20
+```
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; ssu_miSeqMap.sm.txt
+
+{{< downloadthis files/LOTUS3/ssu_miSeqMap.sm.txt dname="ssu_miSeqMap.sm" label="SSU mapping file" icon="code-slash" type="link" >}}
+
+:::
+
+<details>
+  <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
+
+{{< include include/processing/_lotus3_output_ssu.qmd >}}
+
+</details>
+
+# ITS
+
+Here is the command used to analyze the ITS dataset. 
+
+```{bash}
+lotus3 -i . \
+       -map its_miSeqMap.sm.txt \
+       -o LOTUS3_ASV \
+       -sdmopt sdm_miSeq_ITS.txt \
+       -p miSeq \
+       -amplicon_type ITS  \
+       -forwardPrimer CTTGGTCATTTAGAGGAAGTAA \
+       -reversePrimer GCTGCGTTCTTCATCGATGC \
+       -clustering dada2 \
+       -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta \
+       -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax \ 
+       -taxAligner lambda \
+       -t 20
+```
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; its_miSeqMap.sm.txt
+
+{{< downloadthis files/LOTUS3/its_miSeqMap.sm.txt dname="its_miSeqMap.sm" label="ITS mapping file" icon="code-slash" type="link" >}}
+
+:::
+
+<details>
+  <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
+
+{{< include include/processing/_lotus3_output_its.qmd >}}
+
+</details>
+
+# AMF
+
+Here is the command used to analyze the AMF dataset. 
+
+```{bash}
+lotus3 
+       -i . 
+       -map amf_miSeqMap.sm.txt \ 
+       -o LOTUS3_ASV \ 
+       -sdmopt sdm_miSeq.txt \
+       -p miSeq \
+       -amplicon_type SSU  \
+       -forwardPrimer AAGCTCGTAGTTGAATTTCG \
+       -reversePrimer CCCAACTATCCCTATTAATCAT \ 
+       -clustering dada2 \
+       -refDB SLV \
+       -taxAligner lambda \
+       -t 20
+```
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; amf_miSeqMap.sm.txt
+
+{{< downloadthis files/LOTUS3/amf_miSeqMap.sm.txt dname="amf_miSeqMap.sm" label="AMF mapping file" icon="code-slash" type="link" >}}
+
+:::
+
+<details>
+  <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
+
+{{< include include/processing/_lotus3_output_amf.qmd >}}
+
+</details>
+
+# Oomycete
+
+Here is the command used to analyze the Oomycete dataset. 
+
+```{bash}
+lotus3 
+       -i . 
+       -map oo_miSeqMap.sm.txt \
+       -o LOTUS3_ASV \
+       -sdmopt sdm_miSeq_ITS.txt \
+       -p miSeq \
+       -amplicon_type ITS  \
+       -forwardPrimer GGAAGGATCATTACCACA \
+       -reversePrimer GCTGCGTTCTTCATCGATGC \ 
+       -clustering dada2 \
+       -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta \
+       -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax \ 
+       -taxAligner lambda \
+       -t 20
+```
+
+::: {.callout-note appearance="default" icon=false}
+
+### {{< fa download >}} &nbsp; oo_miSeqMap.sm.txt
+
+{{< downloadthis files/LOTUS3/oo_miSeqMap.sm.txt dname="oo_miSeqMap.sm" label="OO mapping file" icon="code-slash" type="link" >}}
+
+:::
+
+<details>
+  <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
+
+{{< include include/processing/_lotus3_output_oo.qmd >}}
+
+</details>
+
+:::
+
+
+# Pipeline Summary
+
+The LotuS3 pipeline produces numerous output files  but for our purposes there are four specific files we are interested in:
+
+1. `phyloseq.Rdata`
+2. `OTU.fna`
+3. `OTU.txt`
+4. `hiera_BLAST.txt`
+
+We will mainly work from the `phyloseq_XXX.Rdata` (renamed  where `XXX` is the dataset name) since this contains the OTU Table, sample Data, taxonomy table, and phylogenetic Tree. Before digging into the data let us first summarize the results of the pipeline. For that we will load the phyloseq data.
+
+::: panel-tabset
+
+# SSU
+
+```{r}
+#| echo: false
+#| eval: false
+load("working_files/LOTUS3/ssu/phyloseq_ssu.Rdata")
+tmp_rc <- readr::read_delim("files/CUTADAPT/ssu_cutadapt_track.txt")
+tmp_tab <- data.frame(sample_sums(physeq)) %>% 
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_reads" = 2)
+ssu_rc <- dplyr::left_join(tmp_rc, tmp_tab, by = "SampleID")
+readr::write_delim(ssu_rc, "files/LOTUS3/ssu_final_track.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+ssu_rc <- readr::read_delim("files/LOTUS3/ssu_final_track.txt")
+names(ssu_rc)[2] <- "raw_rc"
+names(ssu_rc)[3] <- "cutadapt_rc"
+names(ssu_rc)[4] <- "final_rc"
+ssu_rc$per_reads_kept <- round(ssu_rc$final_rc/ssu_rc$raw_rc, digits = 3)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+tmp_react <- ssu_rc
+make_pipeline_table(tmp_react)
+```
+
+{{< downloadthis files/LOTUS3/ssu_final_track.txt dname="ssu_final_track" label="Download table" icon="table" type="primary" >}}
+
+# ITS
+
+```{r}
+#| echo: false
+#| eval: false
+load("working_files/LOTUS3/its/phyloseq_its.Rdata")
+tmp_rc <- readr::read_delim("files/CUTADAPT/its_cutadapt_track.txt")
+tmp_tab <- data.frame(sample_sums(physeq)) %>% 
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_reads" = 2)
+its_rc <- dplyr::left_join(tmp_rc, tmp_tab, by = "SampleID")
+readr::write_delim(its_rc, "files/LOTUS3/its_final_track.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+its_rc <- readr::read_delim("files/LOTUS3/its_final_track.txt")
+names(its_rc)[2] <- "raw_rc"
+names(its_rc)[3] <- "cutadapt_rc"
+names(its_rc)[4] <- "final_rc"
+its_rc$per_reads_kept <- round(its_rc$final_rc/its_rc$raw_rc, digits = 3)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+tmp_react <- its_rc
+make_pipeline_table(tmp_react)
+```
+
+{{< downloadthis files/LOTUS3/its_final_track.txt dname="its_final_track" label="Download table" icon="table" type="primary" >}}
+
+# AMF
+
+```{r}
+#| echo: false
+#| eval: false
+load("working_files/LOTUS3/amf/phyloseq_amf.Rdata")
+tmp_rc <- readr::read_delim("files/CUTADAPT/amf_cutadapt_track.txt")
+tmp_tab <- data.frame(sample_sums(physeq)) %>% 
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_reads" = 2)
+amf_rc <- dplyr::left_join(tmp_rc, tmp_tab, by = "SampleID")
+readr::write_delim(amf_rc, "files/LOTUS3/amf_final_track.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+amf_rc <- readr::read_delim("files/LOTUS3/amf_final_track.txt")
+names(amf_rc)[2] <- "raw_rc"
+names(amf_rc)[3] <- "cutadapt_rc"
+names(amf_rc)[4] <- "final_rc"
+amf_rc$per_reads_kept <- round(amf_rc$final_rc/amf_rc$raw_rc, digits = 3)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+tmp_react <- amf_rc
+make_pipeline_table(tmp_react)
+```
+
+{{< downloadthis files/LOTUS3/amf_final_track.txt dname="amf_final_track" label="Download table" icon="table" type="primary" >}}
+
+# Oomycete
+
+```{r}
+#| echo: false
+#| eval: false
+load("working_files/LOTUS3/oo/phyloseq_oo.Rdata")
+tmp_rc <- readr::read_delim("files/CUTADAPT/oo_cutadapt_track.txt")
+tmp_tab <- data.frame(sample_sums(physeq)) %>% 
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_reads" = 2)
+oo_rc <- dplyr::left_join(tmp_rc, tmp_tab, by = "SampleID")
+readr::write_delim(oo_rc, "files/LOTUS3/oo_final_track.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+oo_rc <- readr::read_delim("files/LOTUS3/oo_final_track.txt")
+names(oo_rc)[2] <- "raw_rc"
+names(oo_rc)[3] <- "cutadapt_rc"
+names(oo_rc)[4] <- "final_rc"
+oo_rc$per_reads_kept <- round(oo_rc$final_rc/oo_rc$raw_rc, digits = 3)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+tmp_react <- oo_rc
+make_pipeline_table(tmp_react)
+```
+
+{{< downloadthis files/LOTUS3/oo_final_track.txt dname="oo_final_track" label="Download table" icon="table" type="primary" >}}
+
+:::
+
+{{< include include/_footer.qmd >}}

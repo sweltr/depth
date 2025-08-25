@@ -4,8 +4,14 @@ subtitle: "Scripts for primer removal using cutadapt for the SSU, ITS, AMF, & Oo
 format:
   html:
     other-links: 
-      - text: Data
-        href: https://doi.org/10.25573/data.16828063
+      - text: Raw SSU fastq files
+        href: https://figshare.com/s/9b449e05451c13bfc061
+      - text: Raw ITS fastq files
+        href: https://figshare.com/s/c3eec1f49a13813da3e9
+      - text: Raw AMF fastq files
+        href: https://figshare.com/s/0b4d6bb16df5bfc434aa
+      - text: Raw OO fastq files
+        href: https://figshare.com/s/53b39b09cca3a96919eb
 ---
 
 {{< include include/_setup.qmd >}}
@@ -153,6 +159,7 @@ In each tab below you can find the complete cutadapt workflow for each dataset. 
 
 : Differences in cutadapt parameters for `--minimum-length` and `--maximum-length`. {tbl-colwidths="[30,30,30]"}
 
+</br>
 </br>
 
 ::: panel-tabset

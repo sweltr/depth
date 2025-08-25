@@ -15,7 +15,7 @@ library(dada2)
 
 ### {{< fa download >}} &nbsp; 1_cut_ssu.R
 
-{{< downloadthis files/CUTADAPT/1_cut_ssu.R dname="1_cut_ssu" label="R Script for cutadapt primer removal" icon="code-slash" type="link" >}}
+{{< downloadthis files/CUTADAPT/1_cut_ssu.R dname="1_cut_ssu" label="R Script for cutadapt" icon="code-slash" type="link" >}} primer removal from the SSU dataset. 
 
 :::
 
@@ -59,7 +59,7 @@ ggsave("CUTADAPT/figures/ssu_plot_qscores_raw.png", p3a, width = 7, height = 3)
 #| fig-width: 4
 #| warning: false
 #| fig-cap: "Aggregated quality score plots for forward (left) & reverse (right) RAW reads."
-knitr::include_graphics("files/CUTADAPT/ssu/ssu_plot_qscores_raw.png")
+knitr::include_graphics("files/CUTADAPT/ssu_plot_qscores_raw.png")
 ```
 
 ### Define Primers
@@ -237,7 +237,7 @@ ggsave("CUTADAPT/figures/ssu_plot_qscores_cut.png", p3_cut,
 #| fig-width: 4
 #| warning: false
 #| fig-cap: "Aggregated quality score plots for forward (left) & reverse (right) reads with primers removed."
-knitr::include_graphics("files/CUTADAPT/ssu/ssu_plot_qscores_cut.png")
+knitr::include_graphics("files/CUTADAPT/ssu_plot_qscores_cut.png")
 ```
 
 ::: {.callout-tip}
@@ -294,19 +294,19 @@ readr::write_delim(track_in, "CUTADAPT/cutadapt_track.txt", delim = "\t")
 ```{r}
 #| echo: false
 #| eval: false
-temp1 <- read.table("files/CUTADAPT/ssu/cutadapt_track.txt", header = TRUE)
+temp1 <- read.table("working_files/CUTADAPT/ssu/cutadapt_track.txt", header = TRUE)
 temp1 <- dplyr::select(temp1, 1, 2, 6)
 
 colnames(temp1)[2] <- "raw_reads"
 colnames(temp1)[3] <- "cutadapt_reads"
 		
-write.table(temp1, "files/CUTADAPT/ssu/ssu_cutadapt_track.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(temp1, "files/CUTADAPT/ssu_cutadapt_track.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 ```
 
 ```{r}
 #| echo: false
 #| eval: true
-seq_table <- read.table("files/CUTADAPT/ssu/ssu_cutadapt_track.txt",
+seq_table <- read.table("files/CUTADAPT/ssu_cutadapt_track.txt",
                        header = TRUE, sep = "\t")
 seq_table$per_reads_kept <- round(seq_table$cutadapt_reads/seq_table$raw_reads, 
                                   digits = 3)
@@ -325,7 +325,7 @@ reactable(seq_table,
     footerStyle = list(fontWeight = "bold")
     ), 
   columns = list(
-    Sample_ID = colDef(name = "Sample ID", 
+    SampleID = colDef(name = "Sample ID", 
                        sticky = "left", 
                        style = list(borderRight = "1px solid #eee"),
                        headerStyle = list(borderRight = "1px solid #eee"), 
@@ -347,5 +347,14 @@ reactable(seq_table,
 
 </br>
 
-{{< downloadthis files/CUTADAPT/ssu/ssu_cutadapt_track.txt dname="ssu_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+{{< downloadthis files/CUTADAPT/ssu_cutadapt_track.txt dname="ssu_cutadapt_track" label="Download table" icon="table" type="primary" >}}
 
+```{r}
+#| echo: false
+#| eval: true
+raw_sum <- sum(seq_table$raw_reads)
+cutadapt_sum <- sum(seq_table$cutadapt_reads)
+ratio <- 100*(cutadapt_sum / raw_sum)
+```
+
+We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 

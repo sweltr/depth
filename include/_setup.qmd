@@ -22,7 +22,9 @@ library(R.utils)
 #  message = FALSE
 #)
 
+options(scipen=999)
+
 # Load custom helper functions
-source(file.path("assets", "functions.R"))
+source(file.path("assets/custom_scripts", "functions.R"))
 ```
 

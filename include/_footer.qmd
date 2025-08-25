@@ -1,6 +1,6 @@
 ####  Source Code {.appendix}
 
-The source code for this page can be accessed on GitHub `r fa(name = "github")` by [clicking this link](`r source_code()`). 
+The source code for this page can be found on GitHub `r fa(name = "github")` by visiting the [`r page_name()`](`r source_code()`) page. 
 
 #### Data Availability {.appendix}
 

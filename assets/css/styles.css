@@ -1,4 +1,45 @@
 /* Whole document: */
+@import url('https://fonts.googleapis.com/css?family=PT+Sans|PT+Serif|Lato:300|Inconsolata|Source+Sans+Pro|Work+Sans:200,300,400,500|');
+/********************************/
+/* controls general properties of site*/
+/********************************/
+
+body {
+  color: #414141;
+/*  line-height: 1.7;
+  font-size: 17px; */
+  background-color: #FEFEFE;
+}
+.quarto-title-banner
+.quarto-title
+.title {
+    font-weight: 300;
+}
+
+
+h1.title {
+  font-size: 2.1em;
+  font-family: 'Source Sans Pro', 'Work Sans';
+  font-weight: 300;
+}
+
+h1 {
+  font-size: calc(1.3rem + 0.6vw);
+  font-family: 'Source Sans Pro', 'Work Sans', 'PT Sans';
+  font-weight: 300;
+}
+
+h2 {
+  /* font-size: 1.65em; */
+  font-family: 'Source Sans Pro', 'Work Sans', 'PT Sans';
+  /* font-weight: 500; */
+}
+
+h3 {
+  /* margin-top: 1em; */
+  font-family: 'Source Sans Pro', 'Work Sans', 'PT Sans';
+}
+
 
 /********************************/
 /* controls CODE*/
@@ -168,8 +209,8 @@ details {
 /********************************/
 
 
-div.callout-note.callout {
-    border-left: 10px solid;
-    border-left-color: #b1621c;
-
-}
+/*div.callout-note.callout {
+/*    border-left: 10px solid;
+/*    border-left-color: #b1621c;
+/*}
+/*    

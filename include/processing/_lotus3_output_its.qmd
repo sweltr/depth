@@ -1,0 +1,187 @@
+```
+00:00:00 LotuS 3.03
+          COMMAND
+          perl ~/miniconda3/envs/lotus3/bin/lotus3 
+          -i. -m its_miSeqMap.sm.txt -o LOTUS3_ASV 
+          -s ~/miniconda3/envs/lotus3/share/lotus3-3.03-1/configs/sdm_miSeq_ITS.txt
+          -p miSeq -amplicon_type ITS 
+          -forwardPrimer CTTGGTCATTTAGAGGAAGTAA
+          -reversePrimer GCTGCGTTCTTCATCGATGC 
+          -CL dada2 
+          -refDB lotus2_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta
+          -tax4refDB lotus2_sh_general_release_dynamic_s_all_19.02.2025_dev.tax
+          -taxAligner lambda -t 20
+```
+
+
+```
+------------ I/O configuration --------------
+Input       .
+Output      LOTUS3_ASV
+SDM options ~/miniconda3/envs/lotus3/share/lotus3-3.03-1/configs/sdm_miSeq_ITS.txt
+TempDir     LOTUS3_ASV/tmpFiles/
+NumCores    20
+```
+
+
+```
+------------ Pipeline config   --------------
+Sequencing platform     miseq
+Amplicon target         eukarya, ITS
+Dereplication filter    -derepMin 8:1,4:2,3:3
+Clustering algorithm    DADA2 -> ASV's
+Read mapping to ASV     minimap2, at 0.99 %id cutoff
+ASV clustering based on sequence error profiles (-dada2seed 0)
+Precluster read merging No
+Ref Chimera checking    Yes (DB=~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//ITS_chimera/uchime_sh_refs_dynamic_original_985_11.03.2015.fasta, -chim_skew 2)
+deNovo Chimera check    Yes
+Tax assignment          Lambda (-LCA_frac 0.8, -LCA_cover 0.5, -LCA_idthresh 97,95,88,83,81,78,0)
+ReferenceDatabase       custom
+RefDB location          lotus2_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta
+ASV phylogeny           Yes (mafft, fasttree2)
+Unclassified ASV's      Kept in matrix
+ITSx check              Yes
+```
+
+```
+00:00:00 Reading mapping file
+          Sequence files are indicated in mapping file.
+          Switching to paired end read mode
+          Found "SequencingRun" column, with 1 categories (its_1)
+```
+
+```
+00:00:00 Demultiplexing, filtering, dereplicating input files, this
+          might take some time..
+          check progress at LOTUS3_ASV/LotuSLogS/LotuS_progout.log
+```
+ 
+ 
+```
+00:00:42 Finished primary read processing with sdm:
+          Reads processed: 2,460,691; 2,460,703 (pair 1;pair 2)
+          Accepted (High qual): 691,801; 851,945 (2,429; 1,991,083 end-trimmed)
+          Accepted (Mid qual): 43;150
+          Rejected: 1,768,458; 1,608,720
+          Dereplication block 0: 10,419 unique sequences (avg size
+          50; 516,768 counts)
+          For an extensive report see LOTUS3_ASV/LotuSLogS//demulti.log
+```
+
+```
+00:00:42 DADA2 ASV clustering
+          check progress at LOTUS3_ASV/LotuSLogS/LotuS_progout.log
+```
+ 
+```
+00:01:23 Found 2830 ASVs, summing to 477956 reads (dada2)
+```
+
+```
+00:01:23 Starting backmapping of 
+            - dereplicated reads
+            - low-abundant dereplicated Reads
+            - mid-quality reads
+          to ASV's using minimap2 at >= 0.99 identity.
+```
+
+```
+00:01:30 Backmapping dereplicated reads via minimap2: 
+          Backmapping  mid qual reads: 
+          Backmapping  mid qual reads: 
+```
+
+```
+00:01:30 Extending and merging pairs of ASV Seeds
+```
+
+```
+00:01:32 Found 4627 fasta seed sequences based on seed extension
+          and read merging
+```
+
+```
+No ref based chimera detection
+```
+
+```
+00:02:04 ITSx analysis: Kept 2527 identified as ITS1,ITS2, deleted
+          303 ASV's (of 2830 ASV's).
+```
+
+```
+00:02:04 Found contaminated 0 ASV's using minimap2 
+     (phiX.0: ~/miniconda3/envs/lotus3/share/lotus3-3.03-1//DB//phiX.fasta)
+```
+
+```
+00:02:10 374 ASV's removed with LULU
+```
+
+```
+00:02:10 Postfilter:
+          Extended logs active, contaminant and chimeric matrix will be created.
+          Contaminants: ITSx.: 288 ASV's removed (49771 reads); 
+          After filtering 2168 ASV's (608393 reads) remaining in matrix.
+```
+
+```
+00:02:10 Assigning taxonomy against 
+          lotus2_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta
+          using LAMBDA3
+```
+
+```
+ 00:02:21 Calculating Taxonomic Abundance Tables from custom assignments
+```
+
+```
+Calculating higher abundance levels
+Adding 202 unclassified ASV's to output matrices
+Total reads in matrix: 608393
+TaxLvl	%Assigned_Reads	%Assigned_ASVs
+Phylum	77	79
+Class	75	75
+Order	71	76
+Family	66	73
+Genus	40	60
+Species	29	47
+```
+
+```
+ 00:02:21 Building tree (fasttree) and aligning (mafft) OTUs
+```
+
+```
+WARNING:: Phylogenies for ITS amplicons may be inaccurate and 
+          should be used with caution.
+```
+
+```
+00:11:02 LotuS3 finished. Output in:
+          LOTUS3_ASV
+                    Next steps:          
+          - Phyloseq: load LOTUS3_ASV/phyloseq.Rdata directly with
+          the phyloseq package in R
+          - Phylogeny: ASV phylogentic tree available in LOTUS3_ASV/OTUphylo.nwk
+          - .biom: LOTUS3_ASV/OTU.biom contains biom formatted output
+          - Alpha diversity/rarefaction curves: rtk (available as
+          R package or in bin/rtk)
+          - LotuSLogS/ contains run statistics (useful for describing
+          data/amount of reads/quality and citations to programs used
+          - Tutorial: Visit http://lotus2.earlham.ac.uk for a numerical
+          ecology tutorial
+```
+
+```
+The following WARNINGS occured:
+WARNING:: Setting "-tax_group" to "eukarya" as only eukarya and 
+          fungi are supported options for ITS.
+WARNING:: Phylogenies for ITS amplicons may be inaccurate and should be 
+          used with caution.
+```
+
+
+
+
+

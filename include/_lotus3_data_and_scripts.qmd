@@ -1,0 +1,10 @@
+| Dataset  | Trimmed fastq files                                                                           | Mapping file                                                                                      |
+|----------|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| SSU      | {{< fa link size=xs >}}[SSU trimmed fastq files](https://figshare.com/s/2450aa503d20de83ee98) | {{< downloadthis files/LOTUS3/ssu_miSeqMap.sm.txt dname="ssu_map" label="SSU map" type="link" >}} |
+| ITS      | {{< fa link size=xs >}}[ITS trimmed fastq files](https://figshare.com/s/8ab716f270e790dad3df) | {{< downloadthis files/LOTUS3/its_miSeqMap.sm.txt dname="its_map" label="ITS map" type="link" >}} |
+| AMF      | {{< fa link size=xs >}}[AMF trimmed fastq files](https://figshare.com/s/02c3755658e82291d081) | {{< downloadthis files/LOTUS3/amf_miSeqMap.sm.txt dname="amf_map" label="AMF map" type="link" >}} |
+| OO       | {{< fa link size=xs >}}[OO trimmed fastq files](https://figshare.com/s/ded97156a4817712b67f)  | {{< downloadthis files/LOTUS3/oo_miSeqMap.sm.txt dname="oo_map" label="OO map" type="link" >}}    |
+
+: Quick links to trimmed fastq data and mapping files for LotuS3. {tbl-colwidths="[16,28,28,28]"}
+
+

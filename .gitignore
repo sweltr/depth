@@ -9,7 +9,8 @@ web.Rproj
 
 public_build/
 public/
-files/
+working_files/
 page_build/
 sandbox/
 _freeze/
+/.quarto/

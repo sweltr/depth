@@ -8,23 +8,24 @@ project:
     - "!public/"
     - "!hack_code/"
     - "!page_build/"
-    - "!files/"
+    - "!working_files/"
     - "!public_build/"
     - "!archive_code/"
     - "!README.md"
     - "!paper/*/*.qmd"
   resources:
-    - source("assets/functions.R")
+    - source("assets/custom_scripts/functions.R")
 
 website:
   title: "SWELTR"
   favicon: "assets/favicon.ico"
-  page-footer: "© Copyright 2022 [metacrobe](https://metacrobe.github.io/) & The SWELTR Project. Site constructed using [Quarto](https://quarto.org/)."
+  page-footer: "© Copyright 2025 [metacrobe](https://metacrobe.github.io/) & The SWELTR Project. Site constructed using [Quarto](https://quarto.org/)."
   site-url: https://sweltr.github.io/depth/
   repo-url: https://github.com/sweltr/depth/
   repo-actions: [edit, issue]
   page-navigation: true
   bread-crumbs: false
+  back-to-top-navigation: false  
   search:
     location: navbar
     type: overlay
@@ -33,45 +34,45 @@ website:
     title: false
     background: light
     left:
-  #    - text: "Home"
+#      - text: "Home"
       - icon: home
         href: index.html
-      - text: "A. Processing"
-        menu:
-          - text: "Workflows"
-          - text: "---------"
-          - text: "1. Cutadapt"
-            href: primers.html
-          - text: "2. Data Set Prep"
-            href: data-prep.html
-          - text: "3. Filtering"
-            href: filtering.html
-      - text: "B. Diversity"
-        menu:
-          - text: "Workflows"
-          - text: "---------"
-          - text: "4. Taxonomic"
-            href: taxa.html
-          - text: "5. Alpha Diversity"
-            href: alpha.html
-          - text: "6. Beta Diversity"
-            href: beta.html
-          - text: "7. DA ASVs & Taxa"
-            href: da.html
-          - text: "8. Metadata"
-            href: metadata.html
+#      - text: "A. Processing"
+#        menu:
+#          - text: "Workflows"
+#          - text: "---------"
+#          - text: "1. Cutadapt"
+#            href: primers.html
+#          - text: "2. Data Set Prep"
+#            href: data-prep.html
+#          - text: "3. Filtering"
+#            href: filtering.html
+#      - text: "B. Diversity"
+#        menu:
+#          - text: "Workflows"
+#          - text: "---------"
+#          - text: "4. Taxonomic"
+#            href: taxa.html
+#          - text: "5. Alpha Diversity"
+#            href: alpha.html
+#          - text: "6. Beta Diversity"
+#            href: beta.html
+#          - text: "7. DA ASVs & Taxa"
+#            href: da.html
+#          - text: "8. Metadata"
+#            href: metadata.html
   #    - icon: fa-code fa-lg
   #      href: raw_code.txt
     right:
-      - text: "DATA"
-        href: data-availability.html
-      - text: PAPER
-        href: pub.html
-      - text: "SOM"
-        href: som.html
+#      - text: "DATA"
+#        href: data-availability.html
+#      - text: PAPER
+#        href: pub.html
+#      - text: "SOM"
+#        href: som.html
       - icon: github
         href: https://github.com/sweltr/depth/
-        aria-label: Agua Salud GitHub
+        aria-label: SWELTR Depth
       - icon: question
         href: about.html
   sidebar:
@@ -82,24 +83,28 @@ website:
         - section: "A. Processing"
           contents:
             - primers.qmd
-            - lotus3_ssu.qmd
-            - lotus3_its.qmd
-            - lotus3_amf.qmd
-            - lotus3_oo.qmd
+            - lotus3.qmd
+        - section: "B. Data Curation"
+          contents:
+            - curate_ssu.qmd
+#            - curate_its.qmd
+#            - curate_amf.qmd
+#            - curate_oo.qmd
         - text: "---------"
-        - section: "B. Diversity"
-          contents:
-            - taxa.qmd
-            - alpha.qmd
-            - beta.qmd
-            - da.qmd
-            - metadata.qmd
-        - section: "More"
-          contents:
-            - data-availability.qmd
-            - som.qmd
-            - about.qmd
-            - pub.qmd
+#        - section: "B. Diversity"
+#          contents:
+#            - taxa.qmd
+#            - alpha.qmd
+#            - beta.qmd
+#            - da.qmd
+#            - metadata.qmd
+#        - text: "---------"
+#        - section: "More"
+#          contents:
+#            - data-availability.qmd
+#            - som.qmd
+#            - about.qmd
+#            - pub.qmd
 
 bibliography: assets/cite.bib
 filters:
