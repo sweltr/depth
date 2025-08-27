@@ -1,4 +1,13 @@
-make_pipeline_table <- function(df, page_size = 5) {
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+
+## This code is to make a standard table for the read count summary table. 
+
+make_lotus3_summ_table <- function(df, page_size = 5) {
   reactable(
     df,
     defaultColDef = colDef(
@@ -34,7 +43,7 @@ make_pipeline_table <- function(df, page_size = 5) {
       ),
       per_reads_kept = colDef(name = "per reads retain")
     ),
-    searchable = TRUE,
+    searchable = FALSE,
     defaultPageSize = page_size,
     pageSizeOptions = c(5, 10, nrow(df)),
     showPageSizeOptions = TRUE,
@@ -46,11 +55,9 @@ make_pipeline_table <- function(df, page_size = 5) {
     showSortable = TRUE,
     fullWidth = TRUE,
     theme = reactableTheme(style = list(fontSize = "0.8em"))
-  ) %>%
-    reactablefmtr::add_subtitle(
-      "Read changes through the LotuS3 pipeline.",
-      font_size = 15
-    )
+  ) 
 }
 
 rm(tmp_react)
+```
+

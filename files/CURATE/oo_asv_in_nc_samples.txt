@@ -1,0 +1,3 @@
+ASV_ID	total_reads_NC	total_reads_samps	perc_in_neg	total_samples	num_samp_nc	num_samp_no_nc	perc_in_neg_samp
+ASV62	1	496	0.201207	5	1	4	20
+ASV1	1	117716	8.49e-4	30	1	29	3.3333333333333335

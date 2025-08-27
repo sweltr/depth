@@ -13,8 +13,16 @@ project:
     - "!archive_code/"
     - "!README.md"
     - "!paper/*/*.qmd"
-  resources:
-    - source("assets/custom_scripts/functions.R")
+    - "!test.qmd"
+# Finished pages, comment # out to build whole site
+    #- "!primers.qmd"
+    #- "!lotus3.qmd"
+    #- "!curate_ssu.qmd"
+    #- "!curate_its.qmd"
+    #- "!curate_amf.qmd"
+    #- "!curate_oo.qmd"
+
+highlight-style: github
 
 website:
   title: "SWELTR"
@@ -24,7 +32,7 @@ website:
   repo-url: https://github.com/sweltr/depth/
   repo-actions: [edit, issue]
   page-navigation: true
-  bread-crumbs: false
+  bread-crumbs: true
   back-to-top-navigation: false  
   search:
     location: navbar
@@ -36,45 +44,45 @@ website:
     left:
 #      - text: "Home"
       - icon: home
-        href: index.html
+        href: index.qmd
 #      - text: "A. Processing"
 #        menu:
 #          - text: "Workflows"
 #          - text: "---------"
 #          - text: "1. Cutadapt"
-#            href: primers.html
+#            href: primers.qmd
 #          - text: "2. Data Set Prep"
-#            href: data-prep.html
+#            href: data-prep.qmd
 #          - text: "3. Filtering"
-#            href: filtering.html
+#            href: filtering.qmd
 #      - text: "B. Diversity"
 #        menu:
 #          - text: "Workflows"
 #          - text: "---------"
 #          - text: "4. Taxonomic"
-#            href: taxa.html
+#            href: taxa.qmd
 #          - text: "5. Alpha Diversity"
-#            href: alpha.html
+#            href: alpha.qmd
 #          - text: "6. Beta Diversity"
-#            href: beta.html
+#            href: beta.qmd
 #          - text: "7. DA ASVs & Taxa"
-#            href: da.html
+#            href: da.qmd
 #          - text: "8. Metadata"
-#            href: metadata.html
+#            href: metadata.qmd
   #    - icon: fa-code fa-lg
   #      href: raw_code.txt
     right:
 #      - text: "DATA"
-#        href: data-availability.html
+#        href: data-availability.qmd
 #      - text: PAPER
-#        href: pub.html
+#        href: pub.qmd
 #      - text: "SOM"
-#        href: som.html
+#        href: som.qmd
       - icon: github
         href: https://github.com/sweltr/depth/
         aria-label: SWELTR Depth
       - icon: question
-        href: about.html
+        href: about.qmd
   sidebar:
       collapse-level: 2
       style: "floating"
@@ -87,9 +95,9 @@ website:
         - section: "B. Data Curation"
           contents:
             - curate_ssu.qmd
-#            - curate_its.qmd
-#            - curate_amf.qmd
-#            - curate_oo.qmd
+            - curate_its.qmd
+            - curate_amf.qmd
+            - curate_oo.qmd
         - text: "---------"
 #        - section: "B. Diversity"
 #          contents:
@@ -112,10 +120,13 @@ filters:
 
 format:
   html:
-    theme: cosmo
+    #theme: cosmo
+    theme:
+      light: [cosmo, assets/css/theme.scss]
+      dark: [cosmo, assets/css/theme-dark.scss]
     anchor-sections: true
     number-sections: false
-    embed-resources: true
+    embed-resources: false
     css: assets/css/styles.css
     code-copy: true
     code-link: true
@@ -129,11 +140,11 @@ format:
     toc: true
     toc-depth: 3
     toc-expand: 3
-
+    respect-user-color-scheme: true
     appendix-style: default
-    title-block-banner-color: "#FEFEFE"
-    title-block-banner: '#113858'
-    title-block-style: default
+    #title-block-banner-color: "#FEFEFE"
+    #title-block-banner: '#113858'
+    #title-block-style: default
 execute:
   freeze: auto
   echo: true
@@ -141,3 +152,7 @@ execute:
   warning: false
   message: false
   
+knitr:
+  opts_chunk:
+    echo: true
+    eval: false

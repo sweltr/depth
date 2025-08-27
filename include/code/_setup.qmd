@@ -1,0 +1,63 @@
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+
+###################################################
+## This partial has some general site packages and 
+## scripts. 
+###################################################
+
+# Load packages (optional)
+library(magrittr)
+library(tidyverse) # contains the following packages: dplyr, readr, forcats, stringr, ggplot2, tibble, lubridate, tidyr, purrr
+library(reactable)
+library(reactablefmtr)
+library(fontawesome)
+library(htmltools)
+library(R.utils)
+library(Biostrings)
+
+# Global knitr options (optional)
+#knitr::opts_chunk$set(
+#  echo = TRUE,
+#  eval = FALSE,
+#  warning = FALSE,
+#  message = FALSE
+#)
+
+options(scipen=999)
+
+# Load custom helper functions
+#source(file.path("assets/custom_scripts", "functions.R"))
+# Try this instead
+## A few little scripts for footer details. 
+
+source_code <- function() {
+    rm(list = ls(pattern = "tmp_"))
+    tmp_in <- knitr::current_input(dir = FALSE)
+    tmp_in <- xfun::with_ext(tmp_in, ".qmd")
+
+    tmp_ldir <- normalizePath(".")
+    tmp_rmd <- list.files(tmp_ldir, pattern = ".qmd")
+    tmp_rmd <- stringr::str_subset(tmp_rmd, tmp_in)
+    tmp_finf <- paste(tmp_ldir, tmp_rmd, sep = "/")
+    tmp_ghub <- stringr::str_replace(tmp_finf, "^.*/", 
+                                     "https://github.com/sweltr/depth/blob/main/")
+    return(tmp_ghub)                                 
+}
+
+page_name <- function() {
+    rm(list = ls(pattern = "tmp_"))
+    tmp_in <- knitr::current_input(dir = FALSE)
+    tmp_in <- xfun::with_ext(tmp_in, ".qmd")
+    return(tmp_in)                                 
+}
+
+get_time <- function() {
+  Sys.time()
+}
+```
+

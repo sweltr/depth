@@ -1,28 +1,16 @@
-```{r}
-#| message: false
-#| results: hide
-#| echo: false
-#| eval: true
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-library(magrittr)
-library(reactable)
-library(downloadthis)
-library(reactablefmtr)
-library(dada2)
-```
 
 ::: {.callout-note appearance="default" icon=false}
 
-### {{< fa download >}} &nbsp; 1_cut_amf.R
+### {{< fa download >}} &nbsp; 1_cut_ssu.R
 
-{{< downloadthis files/CUTADAPT/1_cut_amf.R dname="1_cut_amf" label="R Script for cutadapt" icon="code-slash" type="link" >}} primer removal from the AMF dataset. 
+{{< downloadthis files/CUTADAPT/1_cut_ssu.R dname="1_cut_ssu" label="R Script for cutadapt" icon="code-slash" type="link" >}} primer removal from the SSU dataset. 
 
 :::
 
 First set the path to the directory containing raw sequence data. 
 
 ```{r}
-path <- "/pool/genomics/stri_istmobiome/data/SWELTR/RAW_DATA/AMF/2019"
+path <- "/pool/genomics/stri_istmobiome/data/SWELTR/RAW_DATA/SSU/2019"
 head(list.files(path))
 ```
 
@@ -48,18 +36,18 @@ p1a <- plotQualityProfile(fnFs[1:41], aggregate = TRUE)
 p2a <- plotQualityProfile(fnRs[1:41], aggregate = TRUE)
 
 p3a <- grid.arrange(p1a, p2a, nrow = 1)
-ggsave("CUTADAPT/figures/amf_plot_qscores_raw.png", p3a, width = 7, height = 3)
+ggsave("CUTADAPT/figures/ssu_plot_qscores_raw.png", p3a, width = 7, height = 3)
 ```
 
 ```{r}
-#| label: fig-amf-raw-qscore
+#| label: fig-ssu-raw-qscore
 #| echo: false
 #| eval: true
 #| fig-height: 4
 #| fig-width: 4
 #| warning: false
 #| fig-cap: "Aggregated quality score plots for forward (left) & reverse (right) RAW reads."
-knitr::include_graphics("files/CUTADAPT/amf_plot_qscores_raw.png")
+knitr::include_graphics("files/CUTADAPT/ssu_plot_qscores_raw.png")
 ```
 
 ### Define Primers
@@ -69,8 +57,8 @@ Before we start the DADA2 workflow we need to run [cutadapt](https://github.com/
 First we define the primers.
 
 ```{r}
-FWD <- "AAGCTCGTAGTTGAATTTCG"
-REV <- "CCCAACTATCCCTATTAATCAT"
+FWD <- "GTGCCAGCMGCCGCGGTAA"
+REV <- "GGACTACHVGGGTWTCTAAT"
 ```
 
 Next, we check the presence and orientation of these primers in the data. I started doing this for ITS data because of primer read-through but I really like the general idea of doing it just to make sure nothing funny is going of with the data. To do this, we will create all orientations of the input primer sequences. In other words the Forward, Complement, Reverse, and Reverse Complement variations.
@@ -94,10 +82,10 @@ FWD.orients
 ```
 
 ```
-               Forward             Complement                Reverse 
-"AAGCTCGTAGTTGAATTTCG" "TTCGAGCATCAACTTAAAGC" "GCTTTAAGTTGATGCTCGAA" 
-               RevComp 
-"CGAAATTCAACTACGAGCTT" 
+              Forward            Complement               Reverse 
+"GTGCCAGCMGCCGCGGTAA" "CACGGTCGKCGGCGCCATT" "AATGGCGCCGMCGACCGTG" 
+              RevComp 
+"TTACCGCGGCKGCTGGCAC" 
 ```
 
 ```{r}
@@ -105,10 +93,10 @@ REV.orients
 ```
 
 ```
-                 Forward               Complement                  Reverse 
-"CCCAACTATCCCTATTAATCAT" "GGGTTGATAGGGATAATTAGTA" "TACTAATTATCCCTATCAACCC" 
-                 RevComp 
-"ATGATTAATAGGGATAGTTGGG" 
+               Forward             Complement                Reverse 
+"GGACTACHVGGGTWTCTAAT" "CCTGATGDBCCCAWAGATTA" "TAATCTWTGGGVHCATCAGG" 
+               RevComp 
+"ATTAGAWACCCBDGTAGTCC" 
 ```
 
 Now we do a little pre-filter step to eliminate ambiguous bases (Ns) because Ns make mapping of short primer sequences difficult. This step removes any reads with Ns. Again, set some files paths, this time for the filtered reads.
@@ -133,15 +121,15 @@ primerHits <- function(primer, fn) {
 
 ```{r}
 rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, 
-                                fn = fnFs.filtN[[sampnum]]), 
+                              fn = fnFs.filtN[[sampnum]]), 
       FWD.ReverseReads = sapply(FWD.orients, primerHits, 
-                                fn = fnRs.filtN[[sampnum]]))
+                              fn = fnRs.filtN[[sampnum]]))
 ```
 
 ```
                  Forward Complement Reverse RevComp
-FWD.ForwardReads   47737          0       0       0
-FWD.ReverseReads       0          0       0   33903
+FWD.ForwardReads  240334          0       0       0
+FWD.ReverseReads       1          0       0     110
 ```
 
 #### Reverse primers
@@ -149,15 +137,17 @@ FWD.ReverseReads       0          0       0   33903
 ```{r}
 rbind(REV.ForwardReads = sapply(REV.orients, primerHits, 
                                 fn = fnFs.filtN[[sampnum]]), 
-      REV.ReverseReads = sapply(REV.orients, primerHits, 
+     REV.ReverseReads = sapply(REV.orients, primerHits, 
                                 fn = fnRs.filtN[[sampnum]]))
 ```
 
 ```
                  Forward Complement Reverse RevComp
-REV.ForwardReads       0          0       0   33914
-REV.ReverseReads   45205          0       0       0
+REV.ForwardReads       1          0       0     113
+REV.ReverseReads  228930          0       0       0
 ```
+
+As expected, forward primers predominantly in the forward reads and very little evidence of reverse primers.
 
 ### Remove Primers
 
@@ -187,13 +177,13 @@ R1.flags <- paste("-g", FWD, "-a", REV.RC)
 R2.flags <- paste("-G", REV, "-A", FWD.RC) 
 ```
 
-::: {#amf-cutadapt-command}
+::: {#ssu-cutadapt-command}
 
 ```{r}
 for(i in seq_along(fnFs.filtN)) {system2(cutadapt,
                                    args = c(R1.flags, R2.flags, 
                                             "--times", 2, 
-                                            "--minimum-length", 100,
+                                            "--minimum-length", 200,
                                             "--maximum-length", 300,
                                             "--error-rate", 0.10, 
                                             "--no-indels",
@@ -209,33 +199,33 @@ for(i in seq_along(fnFs.filtN)) {system2(cutadapt,
 
 ```
 This is cutadapt 2.8 with Python 3.7.6
-Command line parameters: -g AAGCTCGTAGTTGAATTTCG -a ATGATTAATAGGGATAGTTGGG  \
-                         -G CCCAACTATCCCTATTAATCAT -A CGAAATTCAACTACGAGCTT  \
-                         --times 2 --minimum-length 100 --maximum-length 300  \
-                         --error-rate 0.1 --no-indels --discard-untrimmed  \
-                         --output P00-D00-000-NNN_R1.fastq.gz  \
-                         --paired-output P00-D00-000-NNN_R2.fastq.gz  \
-                         --report full --cores 10  \
+Command line parameters: -g GTGCCAGCMGCCGCGGTAA -a ATTAGAWACCCBDGTAGTCC \
+                         -G GGACTACHVGGGTWTCTAAT -A TTACCGCGGCKGCTGGCAC \
+                         --times 2 --minimum-length 200 --maximum-length 300 \
+                         --error-rate 0.1 --no-indels --discard-untrimmed \
+                         --output Negative_R1.fastq.gz \
+                         --paired-output Negative_R2.fastq.gz \
+                         --report full --cores 10 
 ```
 
 ```{r}
-p1_cut <- plotQualityProfile(fnFs.cut[1:40], aggregate = TRUE)
-p2_cut <- plotQualityProfile(fnRs.cut[1:40], aggregate = TRUE)
+p1_cut <- plotQualityProfile(fnFs.cut[1:41], aggregate = TRUE)
+p2_cut <- plotQualityProfile(fnRs.cut[1:41], aggregate = TRUE)
 
 p3_cut <- grid.arrange(p1_cut, p2_cut, nrow = 1)
-ggsave("CUTADAPT/figures/amf_plot_qscores_cut.png", p3_cut, 
+ggsave("CUTADAPT/figures/ssu_plot_qscores_cut.png", p3_cut, 
        width = 7, height = 3)
 ```
 
 ```{r}
-#| label: fig-amf-cutadapt-qscore
+#| label: fig-ssu-cutadapt-qscore
 #| echo: false
 #| eval: true
 #| fig-height: 4
 #| fig-width: 4
 #| warning: false
 #| fig-cap: "Aggregated quality score plots for forward (left) & reverse (right) reads with primers removed."
-knitr::include_graphics("files/CUTADAPT/amf_plot_qscores_cut.png")
+knitr::include_graphics("files/CUTADAPT/ssu_plot_qscores_cut.png")
 ```
 
 ::: {.callout-tip}
@@ -256,7 +246,7 @@ rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, fn = fnFs.cut[[sampnum]
 
 ```
                  Forward Complement Reverse RevComp
-FWD.ForwardReads       1          0       0       0
+FWD.ForwardReads       0          0       0       0
 FWD.ReverseReads       0          0       0       0
 REV.ForwardReads       0          0       0       0
 REV.ReverseReads       0          0       0       0
@@ -287,25 +277,24 @@ track_in <- track_in %>%
   mutate(SampleID = str_replace_all(SampleID, "_R.*", ""))
 
 readr::write_delim(track_in, "CUTADAPT/cutadapt_track.txt", delim = "\t")
-
 ```
 
 ```{r}
 #| echo: false
 #| eval: false
-temp1 <- read.table("working_files/CUTADAPT/amf/cutadapt_track.txt", header = TRUE)
+temp1 <- read.table("working_files/CUTADAPT/ssu/cutadapt_track.txt", header = TRUE)
 temp1 <- dplyr::select(temp1, 1, 2, 6)
 
 colnames(temp1)[2] <- "raw_reads"
 colnames(temp1)[3] <- "cutadapt_reads"
 		
-write.table(temp1, "files/CUTADAPT/amf_cutadapt_track.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(temp1, "files/CUTADAPT/ssu_cutadapt_track.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 ```
 
 ```{r}
 #| echo: false
 #| eval: true
-seq_table <- read.table("files/CUTADAPT/amf_cutadapt_track.txt",
+seq_table <- read.table("files/CUTADAPT/ssu_cutadapt_track.txt",
                        header = TRUE, sep = "\t")
 seq_table$per_reads_kept <- round(seq_table$cutadapt_reads/seq_table$raw_reads, 
                                   digits = 3)
@@ -316,37 +305,14 @@ seq_table$per_reads_kept <- round(seq_table$cutadapt_reads/seq_table$raw_reads,
 ```{r}
 #| echo: false
 #| eval: true
-reactable(seq_table,
-  defaultColDef = colDef(
-    header = function(value) gsub("_", " ", value, fixed = TRUE),
-    cell = function(value) format(value, nsmall = 1),
-    align = "center", filterable = FALSE, sortable = TRUE, resizable = TRUE,
-    footerStyle = list(fontWeight = "bold")
-    ), 
-  columns = list(
-    SampleID = colDef(name = "Sample ID", 
-                       sticky = "left", 
-                       style = list(borderRight = "1px solid #eee"),
-                       headerStyle = list(borderRight = "1px solid #eee"), 
-                       align = "left",
-                       minWidth = 150, footer = "Total reads"), 
-    raw_reads = colDef(footer = function(values) sprintf("%.0f", sum(values))),
-    cutadapt_reads = colDef(footer = function(values) sprintf("%.0f", sum(values)))
-    ), 
-  searchable = TRUE, defaultPageSize = 5, 
-  pageSizeOptions = c(5, 10, nrow(seq_table)), 
-  showPageSizeOptions = TRUE, highlight = TRUE, 
-  bordered = TRUE, striped = TRUE, compact = FALSE, 
-  wrap = FALSE, showSortable = TRUE, fullWidth = TRUE,
-  theme = reactableTheme(style = list(fontSize = "0.8em"))) %>%
-  add_title("Raw read count vs. reads remaining after cutadapt.", 
-            align = "left", font_size = 18)
-
+#| label: tbl-make-cutadapt-rc-table-ssu
+#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
+make_cutadapt_rc_table(seq_table)
 ```
 
 </br>
 
-{{< downloadthis files/CUTADAPT/amf_cutadapt_track.txt dname="amf_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+{{< downloadthis files/CUTADAPT/ssu_cutadapt_track.txt dname="ssu_cutadapt_track" label="Download table" icon="table" type="primary" >}}
 
 ```{r}
 #| echo: false

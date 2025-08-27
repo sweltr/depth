@@ -1,0 +1,52 @@
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+make_cutadapt_rc_table <- function(df, page_size = 5) {
+  reactable(
+    df,
+    defaultColDef = colDef(
+      header = function(value) gsub("_", " ", value, fixed = TRUE),
+      cell = function(value) format(value, nsmall = 1),
+      align = "center", 
+      filterable = FALSE, 
+      sortable = TRUE, 
+      resizable = TRUE,
+      footerStyle = list(fontWeight = "bold"
+                         )
+    ), 
+  columns = list(
+    SampleID = colDef(
+      name = "Sample ID", 
+      sticky = "left", 
+      style = list(borderRight = "1px solid #eee"),
+      headerStyle = list(borderRight = "1px solid #eee"), 
+      align = "left",
+      minWidth = 150, 
+      footer = "Total reads"
+      ), 
+    raw_reads = colDef(
+      footer = function(values) sprintf("%.0f", sum(values))
+      ),
+    cutadapt_reads = colDef(
+      footer = function(values) sprintf("%.0f", sum(values))
+      )
+    ), 
+  searchable = FALSE, 
+  defaultPageSize = page_size, 
+  pageSizeOptions = c(5, 10, nrow(seq_table)), 
+  showPageSizeOptions = TRUE, 
+  highlight = TRUE, 
+  bordered = TRUE, 
+  striped = TRUE, 
+  compact = FALSE, 
+  wrap = FALSE, 
+  showSortable = TRUE, 
+  fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))
+  ) 
+}  
+
+```

@@ -8,13 +8,9 @@ format:
         href: https://doi.org/10.25573/data.16828063
 ---
 
-{{< include include/_setup.qmd >}}
+{{< include include/code/_setup.qmd >}}
 
-```{r}
-#| echo: false
-#| eval: true
-source("assets/custom_scripts/make_pipeline_table.R")
-```
+{{< include include/code/_lotus3.qmd >}}
 
 # Overview
 
@@ -26,7 +22,7 @@ Here is everything you need to run this workflow:
 
 </br>
 
-{{< include include/_lotus3_data_and_scripts.qmd >}}
+{{< include include/data/_lotus3_data_and_scripts.qmd >}}
 
 </br>
 
@@ -172,7 +168,7 @@ At this point we now have a formated taxonomy database for the analysis.
 
 ## Individual Workflow
 
-::: panel-tabset
+::: {.panel-tabset .nav-pills .nav-fill}
 
 # SSU
 
@@ -204,7 +200,7 @@ lotus3 -i . \
 <details>
   <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
 
-{{< include include/processing/_lotus3_output_ssu.qmd >}}
+{{< include include/data/_lotus3_output_ssu.qmd >}}
 
 </details>
 
@@ -239,7 +235,7 @@ lotus3 -i . \
 <details>
   <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
 
-{{< include include/processing/_lotus3_output_its.qmd >}}
+{{< include include/data/_lotus3_output_its.qmd >}}
 
 </details>
 
@@ -274,7 +270,7 @@ lotus3
 <details>
   <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
 
-{{< include include/processing/_lotus3_output_amf.qmd >}}
+{{< include include/data/_lotus3_output_amf.qmd >}}
 
 </details>
 
@@ -310,12 +306,11 @@ lotus3
 <details>
   <summary>Click here to see the verbose output of LotuS3 pipeline</summary>
 
-{{< include include/processing/_lotus3_output_oo.qmd >}}
+{{< include include/data/_lotus3_output_oo.qmd >}}
 
 </details>
 
 :::
-
 
 # Pipeline Summary
 
@@ -326,9 +321,9 @@ The LotuS3 pipeline produces numerous output files  but for our purposes there a
 3. `OTU.txt`
 4. `hiera_BLAST.txt`
 
-We will mainly work from the `phyloseq_XXX.Rdata` (renamed  where `XXX` is the dataset name) since this contains the OTU Table, sample Data, taxonomy table, and phylogenetic Tree. Before digging into the data let us first summarize the results of the pipeline. For that we will load the phyloseq data.
+We will mainly work from the `phyloseq_xyz.Rdata` (renamed  where `xyz` is the dataset name) since this contains the OTU Table, sample Data, taxonomy table, and phylogenetic Tree. Before digging into the data let us first summarize the results of the pipeline. For that we will load the phyloseq data.
 
-::: panel-tabset
+::: {.panel-tabset .nav-pills .nav-fill}
 
 # SSU
 
@@ -357,8 +352,10 @@ ssu_rc$per_reads_kept <- round(ssu_rc$final_rc/ssu_rc$raw_rc, digits = 3)
 ```{r}
 #| echo: false
 #| eval: true
+#| label: tbl-make-pipeline-table-ssu
+#| tbl-cap: "Read changes through the LotuS3 pipeline."
 tmp_react <- ssu_rc
-make_pipeline_table(tmp_react)
+make_lotus3_summ_table(tmp_react)
 ```
 
 {{< downloadthis files/LOTUS3/ssu_final_track.txt dname="ssu_final_track" label="Download table" icon="table" type="primary" >}}
@@ -390,8 +387,10 @@ its_rc$per_reads_kept <- round(its_rc$final_rc/its_rc$raw_rc, digits = 3)
 ```{r}
 #| echo: false
 #| eval: true
+#| label: tbl-make-pipeline-table-its
+#| tbl-cap: "Read changes through the LotuS3 pipeline."
 tmp_react <- its_rc
-make_pipeline_table(tmp_react)
+make_lotus3_summ_table(tmp_react)
 ```
 
 {{< downloadthis files/LOTUS3/its_final_track.txt dname="its_final_track" label="Download table" icon="table" type="primary" >}}
@@ -423,8 +422,10 @@ amf_rc$per_reads_kept <- round(amf_rc$final_rc/amf_rc$raw_rc, digits = 3)
 ```{r}
 #| echo: false
 #| eval: true
+#| label: tbl-make-pipeline-table-amf
+#| tbl-cap: "Read changes through the LotuS3 pipeline."
 tmp_react <- amf_rc
-make_pipeline_table(tmp_react)
+make_lotus3_summ_table(tmp_react)
 ```
 
 {{< downloadthis files/LOTUS3/amf_final_track.txt dname="amf_final_track" label="Download table" icon="table" type="primary" >}}
@@ -453,15 +454,18 @@ names(oo_rc)[4] <- "final_rc"
 oo_rc$per_reads_kept <- round(oo_rc$final_rc/oo_rc$raw_rc, digits = 3)
 ```
 
+  
 ```{r}
 #| echo: false
 #| eval: true
+#| label: tbl-make-pipeline-table-oo
+#| tbl-cap: "Read changes through the LotuS3 pipeline."
 tmp_react <- oo_rc
-make_pipeline_table(tmp_react)
+make_lotus3_summ_table(tmp_react)
 ```
 
 {{< downloadthis files/LOTUS3/oo_final_track.txt dname="oo_final_track" label="Download table" icon="table" type="primary" >}}
 
 :::
 
-{{< include include/_footer.qmd >}}
+{{< include include/code/_footer.qmd >}}

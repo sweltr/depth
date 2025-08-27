@@ -1,0 +1,49 @@
+---
+title: "Summary"
+subtitle: "Scripts for primer removal using cutadapt for the 16S rRNA, ITS, AMF, & Oomycete datasets"
+---
+
+{{< include include/code/_setup.qmd >}}
+
+
+
+::: {.panel-tabset .nav-pills}
+
+# SSU
+
+
+# ITS
+
+
+# AMF
+
+
+# Oomycete
+
+
+:::
+
+```{r}
+ssu_me_asv <- readRDS("files/CURATE/ssu_me_asv.rds")
+its_me_asv <- readRDS("files/CURATE/its_me_asv.rds")
+amf_me_asv <- readRDS("files/CURATE/amf_me_asv.rds")
+oo_me_asv <- readRDS("files/CURATE/oo_me_asv.rds")
+```
+
+
+
+
+
+
+
+
+
+
+
+SAVE THIS FOR LATER
+
+```{=html}
+<iframe src="https://widgets.figshare.com/articles/20263857/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0" data-external="1"></iframe>
+```
+
+<iframe src="https://widgets.figshare.com/articles/20263857/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0" data-external="1"></iframe>

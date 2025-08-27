@@ -14,7 +14,9 @@ format:
         href: https://figshare.com/s/53b39b09cca3a96919eb
 ---
 
-{{< include include/_setup.qmd >}}
+{{< include include/code/_setup.qmd >}}
+
+{{< include include/code/_primers.qmd >}}
 
 # Workflow Overview
 
@@ -38,7 +40,7 @@ Here is everything you need to run this workflow--raw data files, fastq renaming
 
 </br>
 
-{{< include include/_raw_data_and_scripts.qmd >}}
+{{< include include/data/_raw_data_and_scripts.qmd >}}
 
 </br>
 
@@ -94,14 +96,10 @@ You can also download the scripts and lookup tables for each dataset from [figsh
 #| code-summary: "Click to see required packages"
 #| code-overflow: wrap
 set.seed(919191)
-library(dada2); packageVersion("dada2")
-library(ShortRead); packageVersion("ShortRead")
-library(Biostrings); packageVersion("Biostrings")
-library(gridExtra)
-library(grid)
-library(DECIPHER); packageVersion("DECIPHER")
-library(magrittr)
-library(tidyverse) # contains the following packages: dplyr, readr, forcats, stringr, ggplot2, tibble, lubridate, tidyr, purrr
+library(dada2)
+library(ShortRead)
+library(Biostrings)
+library(DECIPHER)
 ```
 
 ## Rename fastq Files
@@ -122,7 +120,7 @@ This handy bash script will rename all fastq files.
 
 <summary>Click here to see the bash code for renaming fastq files.</summary>
 
-{{< include include/cutadapt/_rename_sh.qmd >}}
+{{< include include/partials/_rename_sh.qmd >}}
 
 </details>
 
@@ -162,23 +160,23 @@ In each tab below you can find the complete cutadapt workflow for each dataset. 
 </br>
 </br>
 
-::: panel-tabset
+::: {.panel-tabset .nav-pills .nav-fill}
 
 # SSU
 
-{{< include include/cutadapt/_cutadapt_primer_remove_ssu.qmd >}}
+{{< include include/partials/_cutadapt_primer_remove_ssu.qmd >}}
 
 # ITS
 
-{{< include include/cutadapt/_cutadapt_primer_remove_its.qmd >}}
+{{< include include/partials/_cutadapt_primer_remove_its.qmd >}}
 
 # AMF
 
-{{< include include/cutadapt/_cutadapt_primer_remove_amf.qmd >}}
+{{< include include/partials/_cutadapt_primer_remove_amf.qmd >}}
 
 # Oomycete
 
-{{< include include/cutadapt/_cutadapt_primer_remove_oo.qmd >}}
+{{< include include/partials/_cutadapt_primer_remove_oo.qmd >}}
 
 :::
 
@@ -193,9 +191,9 @@ devtools::session_info()
 
 <summary>Click here for Session Information</summary>
 
-{{< include include/cutadapt/_session_info.qmd >}}
+{{< include include/data/_session_info.qmd >}}
 
 </details>
 
-{{< include include/_footer.qmd >}}
+{{< include include/code/_footer.qmd >}}
 

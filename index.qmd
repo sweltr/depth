@@ -19,13 +19,7 @@ format:
 #title-block-banner: assets/banner.png
 ---
 
-```{r}
-#| message: false
-#| results: hide
-#| echo: false
-#| eval: true
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-```
+{{< include include/code/_setup.qmd >}}
 
 ## Access to Data & Scripts
 
@@ -37,25 +31,26 @@ Data provided here is the output of the [Data Curation](#data-curation) workflow
 
 ::: {.callout-note appearance="default" icon=false}
 
-### {{< fa download >}} &nbsp; ssu_curated_data.zip
+{{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data.zip" icon="download"  type="link" >}}   &nbsp; {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data.zip" label="its_curated_data.zip" icon="download" type="link" >}}
 
-{{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="16S rRNA curated data" icon="code-slash" type="link" >}}
+{{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data.zip" icon="download"  type="link" >}}   &nbsp; {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data.zip" label="oo_curated_data.zip" icon="download" type="link" >}}
 
-This `.zip` file contains the processed data in different formats:
 
-- `ssu_otu_table.txt`: ASV by sample abundance table. 
-- `ssu_tax_table.txt`: ASV taxonomic assignments. 
-- `ssu_sample_table.txt`: Sample data table
-- `ssu_rep_fasta.fasta`: Representative ASV fasta sequences.
+These `.zip` files contains the processed data in different formats:
+
+- `xyz_otu_table.txt`: ASV by sample abundance table. 
+- `xyz_tax_table.txt`: ASV taxonomic assignments. 
+- `xyz_sample_table.txt`: Sample data table
+- `xyz_rep_fasta.fasta`: Representative ASV fasta sequences.
 
 These files each contain all four tables descriped above. 
 
-- `ssu_me_asv.rds`: microtable object from the R [microeco](https://chiliubio.github.io/microeco_tutorial/) package.
-- `ssu_ps_asv.rds`: phyloseq object from the R [phyloseq](https://joey711.github.io/phyloseq/) package
+- `xyz_me_asv.rds`: microtable object from the R [microeco](https://chiliubio.github.io/microeco_tutorial/) package.
+- `xyz_ps_asv.rds`: phyloseq object from the R [phyloseq](https://joey711.github.io/phyloseq/) package
+
+Where `xyz` is the root name corresponding to one of the four datasets; **ssu** = 16S rRNA, **its** = ITS, **amf** = Arbuscular mycorrhiza fungi, **oo** = Oomycetes.
 
 :::
-
-> As of  `r Sys.Date()` I have only done this for the SSU (16S rRNA) dataset. The rest are coming soon. 
 
 ### 3. Data Curation
 
@@ -90,9 +85,9 @@ For a more detailed explanation please see the [SSU Data Curation](curate_ssu.qm
 
 Once primer removal is complete you can call ASVs with LotuS3. Here you can find all you need to do this--trimmed fastq files (primers removed), mapping files, and LotuS3 commands. 
 
-{{< include include/_lotus3_data_and_scripts.qmd >}}
+{{< include include/data/_lotus3_data_and_scripts.qmd >}}
 
-Once you have the data and mapping files you can run the following commands (assuming yiu have LotuS3 installed).
+Once you have the data and mapping files you can run the following commands (assuming you have LotuS3 installed).
 
 ```
 
@@ -100,7 +95,7 @@ Once you have the data and mapping files you can run the following commands (ass
 lotus3 -i . -map ssu_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer GTGCCAGCMGCCGCGGTAA -reversePrimer GGACTACHVGGGTWTCTAAT -clustering dada2 -refDB SLV -taxAligner lambda -threads 20
 
 # ITS dataset
-lotus3 -i . -map its_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS  -forwardPrimer CTTGGTCATTTAGAGGAAGTAA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
+lotus3 -i . -map its_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p miSeq -amplicon_type ITS  -forwardPrimer CTTGGTCATTTAGAGGAAGTAA -reversePrimer GCTGCGTTCTTCATCGATGC -clustering dada2 -refDB lotus3_sh__release_dynamic_s_all_19.02.2025_dev.fasta -tax4refDB lotus3_sh_general_release_dynamic_s_all_19.02.2025_dev.tax -taxAligner lambda -t 20
 
 #AMF dataset
 lotus3 -i .-map amf_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq.txt -p miSeq -amplicon_type SSU  -forwardPrimer AAGCTCGTAGTTGAATTTCG -reversePrimer CCCAACTATCCCTATTAATCAT -clustering dada2 -refDB SLV -taxAligner lambda -t 20
@@ -122,9 +117,9 @@ For a more detailed explanation please see the [ASV Inference](lotus3.qmd) workf
 
 ### 1. Primer Removal
 
-Want to start at the very beginning? Here are the raw fastq files, fastq renaming script, and cutadapt primer removal scripts. 
+Want to start at the very beginning? Here are the raw fastq files, fastq renaming script, rename tables, and cutadapt primer removal scripts. 
 
-{{< include include/_raw_data_and_scripts.qmd >}}
+{{< include include/data/_raw_data_and_scripts.qmd >}}
 
 </br>
 
@@ -138,12 +133,12 @@ Want to start at the very beginning? Here are the raw fastq files, fastq renamin
 
 Steps to reproduce results:
 
-a. Run the  script `rename.sh` to rename the fastq files. 
+a. Run the  script `rename.sh` to rename the fastq files. For example, to change the names of the fastq files in the SSU dataset, simply run the following:
 
 ```{bash}
 #| eval: false
 #| echo: true
-bash rename.sh /path/to/fastq_files /path/to/rename_table
+bash rename.sh SSU fastq files/ ssu_rename.txt
 ```
 
 b. Run the cutadapt script (e.g., `1_cut_ssu.R`) using the renamed fastq file directory. 
@@ -159,3 +154,5 @@ Rscript 1_cut_ssu.R
 For a more detailed explanation please see the [Primer Removal](primers.qmd) workflow. 
 
 :::
+
+{{< include include/code/_footer.qmd >}}

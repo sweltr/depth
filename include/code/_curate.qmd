@@ -1,0 +1,236 @@
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+#| results: hide
+set.seed(919191)
+library(microeco)
+library(mia)
+library(phyloseq)
+library(microbiome)
+library(seqinr)
+```
+
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+
+# Thanks for the help chatGPT
+# 
+summarize_objs <- function(objs) {
+  results <- data.frame(
+    me_dataset    = character(),
+    total_asvs    = integer(),
+    total_reads   = numeric(),
+    total_samples = integer(),
+    stringsAsFactors = FALSE
+  )
+  
+  for (obj in objs) {
+    if (exists(obj)) {
+      x <- get(obj)
+      
+      # safely extract values
+      asvs <- tryCatch(nrow(x$tax_table), error = function(e) NA)
+      reads <- tryCatch(sum(x$sample_sums()), error = function(e) NA)
+      samples <- tryCatch(nrow(x$sample_table), error = function(e) NA)
+      
+      if (!is.na(asvs)) {
+        results <- rbind(
+          results,
+          data.frame(
+            me_dataset = obj,
+            total_asvs = asvs,
+            total_reads = reads,
+            total_samples = samples,
+            stringsAsFactors = FALSE
+          )
+        )
+      } else {
+        message(sprintf("Skipping '%s' (missing or invalid tax_table)", obj))
+      }
+    } else {
+      message(sprintf("Skipping '%s' (object missing)", obj))
+    }
+  }
+  
+  results
+}
+```
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+
+make_metadata_table <- function(df, page_size = 5) {
+  reactable(
+    df, defaultColDef = colDef(
+        header = function(value) gsub("_", " ", value, fixed = TRUE),
+        cell = function(value) format(value, nsmall = 0),
+        align = "center", 
+        filterable = FALSE, 
+        sortable = TRUE,
+        resizable = TRUE, 
+        footerStyle = list(fontWeight = "bold")
+    ),
+    columns = list(
+        SampleID = colDef(
+            name = "SampleID", 
+            sticky = "left", 
+            style = list(borderRight = "1px solid #eee"),
+            headerStyle = list(borderRight = "1px solid #eee"),
+            align = "left", 
+            minWidth = 150, 
+            footer = "Total reads"
+            ),
+        raw_rc = colDef(
+            name = "raw rc", 
+            footer = function(values) sprintf("%.0f", sum(values))
+            ),
+        cutadapt_rc = colDef(
+            name = "cutadapt rc", 
+            footer = function(values) sprintf("%.0f", sum(values))
+            ),
+        final_rc = colDef(
+             name = "final rc", 
+             footer = function(values) sprintf("%.0f", sum(values))
+             ),
+        per_reads_kept = colDef(name = "per reads retain"),
+        no_asv = colDef(name = "total ASVs")
+    ),
+    searchable = FALSE, 
+    defaultPageSize = page_size, 
+    pageSizeOptions = c(5, 10, nrow(sample_tab_trim)),
+    showPageSizeOptions = TRUE, 
+    highlight = TRUE, 
+    bordered = TRUE,
+    striped = TRUE, 
+    compact = FALSE, 
+    wrap = FALSE, 
+    showSortable = TRUE,
+    fullWidth = TRUE, 
+    theme = reactableTheme(style = list(fontSize = "0.8em"))
+    ) 
+}
+```
+
+
+```{r}
+#| echo: false
+#| eval: true
+make_asv_in_nc_table <- function(df, page_size = 5) {
+  reactable(
+    df,defaultColDef = colDef(
+       header = function(value) gsub("_", " ", value, fixed = TRUE),
+       align = "center", 
+       filterable = FALSE, 
+       sortable = TRUE, 
+       resizable = TRUE,
+       footerStyle = list(fontWeight = "bold")
+    ), 
+  columns = list(
+    ASV_ID = colDef(
+      name = "ASV ID", 
+      sticky = "left", 
+      style = list(borderRight = "1px solid #eee"),
+      headerStyle = list(borderRight = "1px solid #eee"), 
+      align = "left",
+      minWidth = 100
+      ),
+    total_reads_NC = colDef(
+      name = "reads in NC"
+      ),
+    total_reads_samps = colDef(
+      name = "reads in non NC"
+      ),
+    perc_in_neg = colDef(
+      name = "% in NC", 
+      format = colFormat(digits = 2)
+      ),
+    total_samples = colDef(
+      name = "total samples"
+      ),
+    num_samp_nc = colDef(
+      name = "Total NC samples"
+      ),
+    num_samp_no_nc = colDef(
+      name = "Total non-NC samples"
+      ),
+    perc_in_neg_samp = colDef(
+      name = "% of samples", 
+      format = colFormat(digits = 2)
+      )
+  ),
+  searchable = FALSE, 
+  defaultPageSize = 5, 
+  pageSizeOptions = c(5, 10, nrow(nc_check)), 
+  showPageSizeOptions = TRUE, 
+  highlight = TRUE, 
+  bordered = TRUE, 
+  striped = TRUE, 
+  compact = FALSE, 
+  wrap = FALSE, 
+  showSortable = TRUE, 
+  fullWidth = TRUE,
+  theme = reactableTheme(style = list(fontSize = "0.8em"))
+  ) 
+}  
+```
+
+```{r}
+#| message: false
+#| results: hide
+#| echo: false
+#| eval: true
+make_final_asv_rc_table <- function(df, page_size = 5) {
+  reactable(
+    df, defaultColDef = colDef(
+        header = function(value) gsub("_", " ", value, fixed = TRUE),
+        cell = function(value) format(value, nsmall = 0),
+        align = "center", 
+        filterable = FALSE, 
+        sortable = TRUE,
+        resizable = TRUE, 
+        footerStyle = list(fontWeight = "bold")
+    ),
+    columns = list(
+        SampleID = colDef(
+            name = "SampleID", 
+            sticky = "left", 
+            style = list(borderRight = "1px solid #eee"),
+            headerStyle = list(borderRight = "1px solid #eee"),
+            align = "left", 
+            minWidth = 150, 
+            footer = "Total reads"
+            ),
+        start_rc = colDef(
+            name = "start rc"
+            ),
+        start_asv = colDef(
+            name = "start asv"
+            ),
+        final_rc = colDef(
+             name = "final rc"
+             ),
+        final_asv = colDef(
+          name = "total ASVs"
+             )
+    ),
+    searchable = FALSE, 
+    defaultPageSize = page_size, 
+    pageSizeOptions = c(5, 10, nrow(sample_tab_trim)),
+    showPageSizeOptions = TRUE, 
+    highlight = TRUE, 
+    bordered = TRUE,
+    striped = TRUE, 
+    compact = FALSE, 
+    wrap = FALSE, 
+    showSortable = TRUE,
+    fullWidth = TRUE, 
+    theme = reactableTheme(style = list(fontSize = "0.8em"))
+    ) 
+}
+```

@@ -5,11 +5,12 @@
 /********************************/
 
 body {
-  color: #414141;
-/*  line-height: 1.7;
-  font-size: 17px; */
-  background-color: #FEFEFE;
+/*  color: #414141;
+/*  line-height: 1.7;*/
+  font-size: 17px; 
+  /*background-color: #FEFEFE;*/
 }
+
 .quarto-title-banner
 .quarto-title
 .title {
@@ -51,16 +52,16 @@ h3 {
 
 pre.sourceCode.r {
    margin-top: 0px;
-   color: #333333;
-   background-color: #E8E8E8;
+/*   color: #333333; */
+/*   background-color: #E8E8E8;*/
    border-radius: 3px;
    font-size: 0.90em;
    font-family: 'Monaco', 'PT Mono', monospace;
    overflow-x: scroll !important;
-   border-left: 6px solid #2271B2;
-   border-top: 1px solid #B7B7B7;
-   border-right: 1px solid #B7B7B7;
-   border-bottom: 1px solid #B7B7B7;
+   border-left: 6px solid; /*#2271B2;*/
+   border-top: 1px solid; /*#B7B7B7;*/
+   border-right: 1px solid; /*#B7B7B7;*/
+   border-bottom: 1px solid; /*#B7B7B7;*/
    padding: 18px 0px 18px 20px;
  }
 
@@ -78,16 +79,16 @@ code.sourceCode.R {
 
 pre.sourceCode.bash {
    margin-top: 0px;
-   color: #333333;
-   background-color: #E8E8E8;
+/*   color: #333333;*/
+/*   background-color: #E8E8E8;*/
    border-radius: 3px;
    font-size: 0.90em;
    font-family: 'Monaco', 'PT Mono', monospace;
    overflow-x: scroll !important;
-   border-left: 6px solid #4A4DB5;
-   border-top: 1px solid #B7B7B7;
-   border-right: 1px solid #B7B7B7;
-   border-bottom: 1px solid #B7B7B7;
+   border-left: 6px solid; /*#4A4DB5;*/
+   border-top: 1px solid; /*#B7B7B7;*/
+   border-right: 1px solid; /*#B7B7B7;*/
+   border-bottom: 1px solid; /*#B7B7B7;*/
    padding: 18px 0px 18px 20px;
 }
 
@@ -105,10 +106,10 @@ pre.sourceCode.zsh {
   font-size: 0.95em;
   font-family: 'Monaco', 'PT Mono', monospace;
   overflow-x: scroll !important;
-  border-left: 6px solid #009E73;
-  border-top: 1px solid #B7B7B7;
-  border-right: 1px solid #B7B7B7;
-  border-bottom: 1px solid #B7B7B7;
+  border-left: 6px solid; /*#009E73;*/
+  border-top: 1px solid; /*#B7B7B7;*/
+  border-right: 1px solid; /*#B7B7B7;*/
+  border-bottom: 1px solid; /*#B7B7B7;*/
   padding: 10px 0px 10px 10px;
 }
 
@@ -126,10 +127,10 @@ pre.sourceCode {
   font-size: 0.95em;
   font-family: 'Monaco', 'PT Mono', monospace;
   overflow-x: scroll !important;
-  border-left: 6px solid #CC79A7;
-  border-top: 1px solid #B7B7B7;
-  border-right: 1px solid #B7B7B7;
-  border-bottom: 1px solid #B7B7B7;
+  border-left: 6px solid; /*#CC79A7;*/
+  border-top: 1px solid; /*#B7B7B7;*/
+  border-right: 1px solid; /*#B7B7B7;*/
+  border-bottom: 1px solid; /*#B7B7B7;*/
   padding: 10px 0px 10px 10px;
 }
 
@@ -142,9 +143,9 @@ code.sourceCode {
 
 pre code {
    margin-top: 0px;
-    color: #333333;
+/*    color: #333333; */
     font-size: 0.9em;
-    border: 2px solid #ccc;
+    border: 1px solid #ccc;
     overflow-x: scroll !important;
     padding:  10px 10px 10px 18px;
     border-radius: 5px;
@@ -158,51 +159,100 @@ p code:not(.sourceCode), li code:not(.sourceCode), td code:not(.sourceCode) {
   }
 
 code {
-  color: #9954bb;
+/*  color: #9954bb; */
   font-size: 0.90em;
  }
   
 /** Controls inline code  **/
 
 p code {
-  background-color: #E8E8E8;
+/*  background-color: #E8E8E8; */
   border-radius: 3px;
   font-size: 0.9em;
   font-family: 'Monaco', 'PT Mono', monospace;
   overflow-x: scroll !important;
   margin-bottom: 20px;
-  color: #BF2727;
+/*   color: #BF2727; */
 }
 
 li code {
-  background-color: #E8E8E8;
+/*  background-color: #E8E8E8;*/
   border-radius: 3px;
   font-size: 0.9em;
   font-family: 'Monaco', 'PT Mono', monospace;
   overflow-x: scroll !important;
   margin-bottom: 20px;
-  color: #BF2727;
+/*  color: #BF2727;*/
 }
 
 d-article aside code {
-  background-color: #E8E8E8;
+/*  background-color: #E8E8E8;*/
   border-radius: 3px;
   font-family: 'Monaco', 'PT Mono', monospace;
-  color: #BF2727;
+/*  color: #BF2727;*/
 }
 
 /** DETAILS fold down**/
 
 details {
-  background-color: #f6f6f6;
+/*  background-color: #f6f6f6;*/
   cursor: pointer;
-  color: #2d2d2d;
-  margin-bottom:1vh;
+/*  color: #2d2d2d; */
+  margin-bottom: 1vh;
   padding: 1em;
-  border: none;
+  border: 0.5x solid;
   text-align: left;
-  outline: none;
+  outline: 0.5px solid;
 }
+
+/********************************/
+/* controls TABSET*/
+/********************************/
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+/* Style the tab content */
+/* uncomment to get boxes instead of underline */
+/*.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    border: none;
+    border-bottom: 2px solid #39729E;
+    color: #39729E;
+    background-color: transparent;
+} */
 
 /********************************/
 /* controls CALLOUTS*/
@@ -214,3 +264,4 @@ details {
 /*    border-left-color: #b1621c;
 /*}
 /*    
+
