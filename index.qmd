@@ -46,7 +46,7 @@ These `.zip` files contain the processed data in different formats:
 
 - `xyz_otu_table.txt`: ASV by sample abundance table. 
 - `xyz_tax_table.txt`: ASV taxonomic assignments. 
-- `xyz_sample_table.txt`: Sample data table
+- `xyz_sample_table.txt`: Sample data table, **including read tracking through the entire workflow**.
 - `xyz_rep_fasta.fasta`: Representative ASV fasta sequences.
 
 These files each contain all four tables descriped above. 
