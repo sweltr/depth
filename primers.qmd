@@ -180,6 +180,131 @@ In each tab below you can find the complete cutadapt workflow for each dataset. 
 
 :::
 
+# Workflow Summary
+
+```{r}
+#| echo: false
+#| eval: true
+
+me_objs <- c("ssu", "its", "amf", "oo")
+tab_r_path <- "working_files/CUTADAPT/"
+tab_s_path <- "files/CUTADAPT/"
+
+for (i in me_objs) {
+  tmp_name <- i
+  temp1 <- read.table(paste0(tab_r_path, tmp_name, "/", tmp_name, "_cutadapt_track.txt"), header = TRUE)
+  temp1 <- dplyr::select(temp1, 1, 2, 6)
+  colnames(temp1)[2] <- "raw_reads"
+  colnames(temp1)[3] <- "cutadapt_reads"
+  write.table(temp1, paste0(tab_s_path, tmp_name, "_cutadapt_track.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+  temp1$per_reads_kept <- round(temp1$cutadapt_reads/temp1$raw_reads, digits = 3)
+  tmp_tab_name <- paste0(tmp_name, "_seq_table")
+  assign(tmp_tab_name, temp1)
+  rm(list = ls(pattern = "tmp_"))
+}  
+```
+
+::: {.panel-tabset .nav-pills .nav-fill}
+
+# SSU
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-make-cutadapt-rc-table-ssu
+#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
+make_cutadapt_rc_table(ssu_seq_table)
+```
+
+</br>
+
+{{< downloadthis files/CUTADAPT/ssu_cutadapt_track.txt dname="ssu_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+
+```{r}
+#| echo: false
+#| eval: true
+raw_sum <- sum(ssu_seq_table$raw_reads)
+cutadapt_sum <- sum(ssu_seq_table$cutadapt_reads)
+ratio <- 100*(cutadapt_sum / raw_sum)
+```
+
+We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 
+
+# ITS
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-make-cutadapt-rc-table-its
+#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
+make_cutadapt_rc_table(its_seq_table)
+```
+
+</br>
+
+{{< downloadthis files/CUTADAPT/its_cutadapt_track.txt dname="its_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+
+```{r}
+#| echo: false
+#| eval: true
+raw_sum <- sum(its_seq_table$raw_reads)
+cutadapt_sum <- sum(its_seq_table$cutadapt_reads)
+ratio <- 100*(cutadapt_sum / raw_sum)
+```
+
+We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 
+
+# AMF
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-make-cutadapt-rc-table-amf
+#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
+make_cutadapt_rc_table(amf_seq_table)
+```
+
+</br>
+
+{{< downloadthis files/CUTADAPT/amf_cutadapt_track.txt dname="amf_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+
+```{r}
+#| echo: false
+#| eval: true
+raw_sum <- sum(amf_seq_table$raw_reads)
+cutadapt_sum <- sum(amf_seq_table$cutadapt_reads)
+ratio <- 100*(cutadapt_sum / raw_sum)
+```
+
+We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 
+
+# Oomycete
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-make-cutadapt-rc-table-oo
+#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
+make_cutadapt_rc_table(oo_seq_table)
+```
+
+</br>
+
+{{< downloadthis files/CUTADAPT/oo_cutadapt_track.txt dname="oo_cutadapt_track" label="Download table" icon="table" type="primary" >}}
+
+```{r}
+#| echo: false
+#| eval: true
+raw_sum <- sum(oo_seq_table$raw_reads)
+cutadapt_sum <- sum(oo_seq_table$cutadapt_reads)
+ratio <- 100*(cutadapt_sum / raw_sum)
+```
+
+We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 
+
+:::
+
 # Session Information
 
 ```{r}

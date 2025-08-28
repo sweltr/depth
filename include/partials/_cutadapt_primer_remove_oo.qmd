@@ -252,6 +252,8 @@ REV.ForwardReads       0          0       0       0
 REV.ReverseReads       0          0       0       0
 ```
 
+As you can see, no primers of any orientation remain in the dataset. 
+
 Finally, we can use the following code to generate a summary table of read count changes before and after primer removal.
 
 ```{r}
@@ -278,48 +280,3 @@ track_in <- track_in %>%
 
 readr::write_delim(track_in, "CUTADAPT/cutadapt_track.txt", delim = "\t")
 ```
-
-```{r}
-#| echo: false
-#| eval: false
-temp1 <- read.table("working_files/CUTADAPT/oo/cutadapt_track.txt", header = TRUE)
-temp1 <- dplyr::select(temp1, 1, 2, 6)
-
-colnames(temp1)[2] <- "raw_reads"
-colnames(temp1)[3] <- "cutadapt_reads"
-		
-write.table(temp1, "files/CUTADAPT/oo_cutadapt_track.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-```
-
-```{r}
-#| echo: false
-#| eval: true
-seq_table <- read.table("files/CUTADAPT/oo_cutadapt_track.txt",
-                       header = TRUE, sep = "\t")
-seq_table$per_reads_kept <- round(seq_table$cutadapt_reads/seq_table$raw_reads, 
-                                  digits = 3)
-```
-
-</br>
-
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-make-cutadapt-rc-table-oo
-#| tbl-cap: "Raw read count vs. reads remaining after cutadapt."
-make_cutadapt_rc_table(seq_table)
-```
-
-</br>
-
-{{< downloadthis files/CUTADAPT/oo_cutadapt_track.txt dname="oo_cutadapt_track" label="Download table" icon="table" type="primary" >}}
-
-```{r}
-#| echo: false
-#| eval: true
-raw_sum <- sum(seq_table$raw_reads)
-cutadapt_sum <- sum(seq_table$cutadapt_reads)
-ratio <- 100*(cutadapt_sum / raw_sum)
-```
-
-We started with `r raw_sum` total reads. After primer removal we are left with `r round(ratio, digits = 2)`% of the reads we started with, or a total of `r cutadapt_sum` reads. 

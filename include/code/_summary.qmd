@@ -1,0 +1,189 @@
+```{r}
+#| echo: false
+#| eval: true
+#| message: false
+#| warning: false
+library(magrittr)
+library(tidyverse) # contains the following packages: dplyr, readr, forcats, stringr, ggplot2, tibble, lubridate, tidyr, purrr
+library(reactable)
+library(reactablefmtr)
+```
+
+```{r}
+#| echo: false
+#| eval: false
+ssu_me_asv <- readRDS("files/CURATE/ssu_me_asv.rds")
+its_me_asv <- readRDS("files/CURATE/its_me_asv.rds")
+amf_me_asv <- readRDS("files/CURATE/amf_me_asv.rds")
+oo_me_asv <- readRDS("files/CURATE/oo_me_asv.rds")
+```
+
+```{r}
+#| echo: false
+#| eval: false
+me_objs <- c("ssu_me_asv", "its_me_asv", "amf_me_asv", "oo_me_asv")
+
+for (i in me_objs) {
+  tmp_get <- get(i)
+  tmp_name <- str_remove(i, "_.*") 
+  tmp_final <- microeco::clone(tmp_get)
+  
+  tmp_final_rc <- data.frame(tmp_final$sample_sums()) %>% 
+    tibble::rownames_to_column("SampleID") %>% 
+    dplyr::rename(!!(paste0(tmp_name, "_reads")) := 2)
+  
+  tmp_final_asv <- data.frame(t(tmp_final$otu_table))
+  tmp_final_asv <- data.frame(rowSums(tmp_final_asv > 0)) %>% 
+    tibble::rownames_to_column("SampleID") %>% 
+    dplyr::rename(!!(paste0(tmp_name, "_asvs")) := 2)
+
+  tmp_tab <- dplyr::left_join(tmp_final_rc, tmp_final_asv) 
+  tmp_tab_name <- paste0(tmp_name, "_tab")
+  assign(tmp_tab_name, tmp_tab)
+  rm(list = ls(pattern = "tmp_"))
+
+}  
+
+tmp_combo <- dplyr::full_join(ssu_tab, its_tab)  %>%
+  dplyr::full_join(., amf_tab) %>%
+  dplyr::full_join(., oo_tab)
+
+tmp_gen <- readr::read_delim("files/CURATE/general_sample_data.txt", delim = "\t")
+
+all_ds_summary <- dplyr::full_join(tmp_gen, tmp_combo)
+
+all_ds_summary <- all_ds_summary[order(all_ds_summary$Depth), ]
+readr::write_delim(all_ds_summary, "files/SHARE/all_samples_final_counts.txt", delim = "\t")
+rm(list = ls(pattern = "_tab"))
+objects()
+```
+
+```{r}
+#| echo: false
+#| eval: true
+rtdf <- readr::read_delim("files/SHARE/all_samples_final_counts.txt", delim = "\t")
+```
+
+```{r}
+#| echo: false
+#| eval: true
+
+na_style <- function(value) {
+  if (is.na(value)) list(color = "red", fontWeight = "bold")
+}
+
+na_filter <- JS(
+  "function(rows, columnId, filterValue) {
+     if (filterValue === 'NA') {
+       return rows.filter(r => r.values[columnId] === null);
+     } else if (filterValue === 'Not NA') {
+       return rows.filter(r => r.values[columnId] !== null);
+     }
+     return rows;
+   }"
+)
+
+head_style <- list(
+        borderTop = "2px solid",
+        borderRight = "2px solid"
+       )
+head_style2 <- list(
+        borderTop = "2px solid",
+        borderLeft = "2px solid",
+        borderRight = "2px solid"
+       )
+cell_grp_head_style <-  list(
+  borderRight = "2px solid")
+
+cell_grp_body_style <-   function(value) {
+  list(borderRight = "2px solid")}
+
+combined_style_function <- function(value) {
+      style1 <- if (is.na(value)) list(color = "red", fontWeight = "bold")
+      style2 <- list(borderRight = "2px solid")
+
+      # Combine the lists of CSS properties
+      c(style1, style2)
+    }
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| column: body-outset
+#| label: tbl-make-all_ds_summary
+#| tbl-cap: "final read/ASV counts for each sample in all datasets."
+#--------------------------------------------------#
+
+reactable(
+  rtdf,
+  defaultColDef = colDef(
+      header = function(value) gsub("_", " ", value, fixed = TRUE),
+      cell = function(value) format(value, nsmall = 0),
+      align = "center",
+      filterable = TRUE,
+      sortable = TRUE,
+      resizable = TRUE,
+      searchable = FALSE
+    ),
+  columns = list(
+    SampleID = colDef(
+        name = "SampleID",
+        sticky = "left",
+        headerStyle = cell_grp_head_style, 
+        style = cell_grp_body_style,
+        align = "left",
+        minWidth = 130
+      ),
+    Plot = colDef(name = "Plot", minWidth = 55),
+    Depth = colDef(name = "Depth", minWidth = 65),
+    Treatment = colDef(name = "Treat", minWidth = 80),
+    Temp = colDef(name = "Temp", minWidth = 70),
+    Pairing = colDef(name = "Pair", minWidth = 70,
+                     style = combined_style_function,
+                     filterMethod = na_filter, 
+                     headerStyle = cell_grp_head_style),
+    ssu_reads = colDef(name = "16S rRNA", style = na_style, filterMethod = na_filter),
+    its_reads = colDef(name = "ITS", style = na_style, filterMethod = na_filter),
+    amf_reads = colDef(name = "AMF", style = na_style, filterMethod = na_filter),
+    oo_reads = colDef(name = "Oomycetes", 
+                       style = combined_style_function,
+                       filterMethod = na_filter, 
+                       headerStyle = cell_grp_head_style
+                      ),
+    ssu_asvs = colDef(name = "16S rRNA", style = na_style, filterMethod = na_filter),
+    its_asvs = colDef(name = "ITS", style = na_style, filterMethod = na_filter),
+    amf_asvs = colDef(name = "AMF", style = na_style, filterMethod = na_filter),
+    oo_asvs = colDef(name = "Oomycetes", 
+                       style = combined_style_function,
+                       filterMethod = na_filter, 
+                       headerStyle = cell_grp_head_style
+                     )
+  ),
+  columnGroups = list(
+    colGroup(name = "Metadata", 
+             columns = c("Plot", "Depth", "Treatment", "Temp", "Pairing") #,headerStyle = head_style2, 
+             ),
+    colGroup(name = "Read Count", 
+             columns = c("ssu_reads", "its_reads", "amf_reads", "oo_reads")#,headerStyle = head_style, 
+),
+    colGroup(name = "ASV Count", 
+             columns = c("ssu_asvs", "its_asvs", "amf_asvs","oo_asvs")#,headerStyle = head_style, 
+)
+  ),
+    searchable = FALSE,
+    defaultPageSize = 10,
+    pageSizeOptions = c(5, 10, nrow(rtdf)),
+    showPageSizeOptions = TRUE,
+    highlight = TRUE,
+    bordered = TRUE,
+    striped = TRUE,
+    compact = FALSE,
+    wrap = FALSE,
+    showSortable = TRUE,
+    fullWidth = TRUE,
+    theme = reactableTheme(
+      style = list(fontSize = "0.8em")
+  )
+)
+```

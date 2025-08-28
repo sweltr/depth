@@ -83,27 +83,23 @@ make_metadata_table <- function(df, page_size = 5) {
             style = list(borderRight = "1px solid #eee"),
             headerStyle = list(borderRight = "1px solid #eee"),
             align = "left", 
-            minWidth = 150, 
-            footer = "Total reads"
+            minWidth = 150
             ),
         raw_rc = colDef(
-            name = "raw rc", 
-            footer = function(values) sprintf("%.0f", sum(values))
+            name = "raw rc"
             ),
         cutadapt_rc = colDef(
-            name = "cutadapt rc", 
-            footer = function(values) sprintf("%.0f", sum(values))
+            name = "cutadapt rc"
             ),
         final_rc = colDef(
-             name = "final rc", 
-             footer = function(values) sprintf("%.0f", sum(values))
+             name = "final rc"
              ),
         per_reads_kept = colDef(name = "per reads retain"),
         no_asv = colDef(name = "total ASVs")
     ),
     searchable = FALSE, 
     defaultPageSize = page_size, 
-    pageSizeOptions = c(5, 10, nrow(sample_tab_trim)),
+    pageSizeOptions = c(5, 10, nrow(df)),
     showPageSizeOptions = TRUE, 
     highlight = TRUE, 
     bordered = TRUE,
@@ -123,7 +119,7 @@ make_metadata_table <- function(df, page_size = 5) {
 #| eval: true
 make_asv_in_nc_table <- function(df, page_size = 5) {
   reactable(
-    df,defaultColDef = colDef(
+    df, defaultColDef = colDef(
        header = function(value) gsub("_", " ", value, fixed = TRUE),
        align = "center", 
        filterable = FALSE, 
@@ -166,7 +162,7 @@ make_asv_in_nc_table <- function(df, page_size = 5) {
   ),
   searchable = FALSE, 
   defaultPageSize = 5, 
-  pageSizeOptions = c(5, 10, nrow(nc_check)), 
+  pageSizeOptions = c(5, 10, nrow(df)), 
   showPageSizeOptions = TRUE, 
   highlight = TRUE, 
   bordered = TRUE, 
@@ -203,8 +199,7 @@ make_final_asv_rc_table <- function(df, page_size = 5) {
             style = list(borderRight = "1px solid #eee"),
             headerStyle = list(borderRight = "1px solid #eee"),
             align = "left", 
-            minWidth = 150, 
-            footer = "Total reads"
+            minWidth = 150
             ),
         start_rc = colDef(
             name = "start rc"
@@ -216,12 +211,12 @@ make_final_asv_rc_table <- function(df, page_size = 5) {
              name = "final rc"
              ),
         final_asv = colDef(
-          name = "total ASVs"
+          name = "final asv"
              )
     ),
     searchable = FALSE, 
     defaultPageSize = page_size, 
-    pageSizeOptions = c(5, 10, nrow(sample_tab_trim)),
+    pageSizeOptions = c(5, 10, nrow(df)),
     showPageSizeOptions = TRUE, 
     highlight = TRUE, 
     bordered = TRUE,

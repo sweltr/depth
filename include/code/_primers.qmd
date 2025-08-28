@@ -36,7 +36,7 @@ make_cutadapt_rc_table <- function(df, page_size = 5) {
     ), 
   searchable = FALSE, 
   defaultPageSize = page_size, 
-  pageSizeOptions = c(5, 10, nrow(seq_table)), 
+  pageSizeOptions = c(5, 10, nrow(df)), 
   showPageSizeOptions = TRUE, 
   highlight = TRUE, 
   bordered = TRUE, 

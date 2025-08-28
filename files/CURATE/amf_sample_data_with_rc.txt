@@ -1,4 +1,4 @@
-SampleID	Plot	Depth	Treatment	Temp	Pairing	raw_rc	cutadapt_rc	final_rc	per_reads_kept	no_asv
+SampleID	Plot	Depth	Treatment	Temp	Pairing	raw_rc	cutadapt_rc	lotus3_rc	per_reads_kept	lotus3_asv
 P00_D00_000_NNN	P00	00_000	Negative	N	N	47622	29518	23941	0.503	63
 P01_D00_010_W4A	P01	00_010	Warm	4	A	49965	48866	37078	0.742	213
 P01_D10_020_W4A	P01	10_020	Warm	4	A	22904	22346	19128	0.835	53

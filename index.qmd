@@ -27,16 +27,22 @@ Here I provide quick access to data and scripts depending on where you want to s
 
 ### 4. Processed Data
 
-Data provided here is the output of the [Data Curation](#data-curation) workflow. **These data are ready for analysis**.
+Data provided here is the output of the [Data Curation](#data-curation) workflows. **These data are ready for analysis**.
 
 ::: {.callout-note appearance="default" icon=false}
 
-{{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data.zip" icon="download"  type="link" >}}   &nbsp; {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data.zip" label="its_curated_data.zip" icon="download" type="link" >}}
+## Curated Data
 
-{{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data.zip" icon="download"  type="link" >}}   &nbsp; {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data.zip" label="oo_curated_data.zip" icon="download" type="link" >}}
+| Dataset         | Currated Data (zip files)                                                                      
+|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------:|
+| 16S rRNA (ssu)  | {{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data" icon="download"  type="link" >}}    |
+| ITS (its)       | {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data.zip" label="its_curated_data" icon="download" type="link" >}} |
+| AMF (amf)       | {{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data" icon="download"  type="link" >}}    |
+| Oomycete (oo)   | {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data.zip" label="oo_curated_data" icon="download" type="link" >}}    |
 
+: Quick links to curated data. {tbl-colwidths="[25,50]"}
 
-These `.zip` files contains the processed data in different formats:
+These `.zip` files contain the processed data in different formats:
 
 - `xyz_otu_table.txt`: ASV by sample abundance table. 
 - `xyz_tax_table.txt`: ASV taxonomic assignments. 
@@ -51,6 +57,28 @@ These files each contain all four tables descriped above.
 Where `xyz` is the root name corresponding to one of the four datasets; **ssu** = 16S rRNA, **its** = ITS, **amf** = Arbuscular mycorrhiza fungi, **oo** = Oomycetes.
 
 :::
+
+#### Curated Data Summary
+
+I strongly encourage anyone interested in these data to look closely at this table--specifically the samples which have been removed at some point in the pipeline. These are represented by `NA` in the table. **This is especially true for the Oomycete dataset**.
+
+
+
+::: {.callout-note appearance="default" icon=false}
+
+## Curated Data Summary Table
+
+You can download the table here:
+
+
+{{< downloadthis files/SHARE/all_samples_final_counts.txt dname=all_samples_final_counts label="Download final read/ASV counts in all datasets" icon=download type=link class=data-button id=all_samples_final_counts >}}
+
+Or view it in-line below. 
+:::
+
+
+{{< include include/code/_summary.qmd >}}
+
 
 ### 3. Data Curation
 

@@ -7,31 +7,6 @@ subtitle: "Scripts for primer removal using cutadapt for the 16S rRNA, ITS, AMF,
 
 
 
-::: {.panel-tabset .nav-pills}
-
-# SSU
-
-
-# ITS
-
-
-# AMF
-
-
-# Oomycete
-
-
-:::
-
-```{r}
-ssu_me_asv <- readRDS("files/CURATE/ssu_me_asv.rds")
-its_me_asv <- readRDS("files/CURATE/its_me_asv.rds")
-amf_me_asv <- readRDS("files/CURATE/amf_me_asv.rds")
-oo_me_asv <- readRDS("files/CURATE/oo_me_asv.rds")
-```
-
-
-
 
 
 

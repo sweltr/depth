@@ -89,10 +89,10 @@ physeq
 
 ```
 phyloseq-class experiment-level object
-otu_table()   OTU Table:         [ 12091 taxa and 41 samples ]
-sample_data() Sample Data:       [ 41 samples by 14 sample variables ]
-tax_table()   Taxonomy Table:    [ 12091 taxa by 7 taxonomic ranks ]
-phy_tree()    Phylogenetic Tree: [ 12091 tips and 12089 internal nodes ]
+otu_table()   OTU Table:          [ 2168 taxa and 40 samples ]:
+sample_data() Sample Data:        [ 40 samples by 14 sample variables ]:
+tax_table()   Taxonomy Table:     [ 2168 taxa by 7 taxonomic ranks ]:
+phy_tree()    Phylogenetic Tree:  [ 2168 tips and 2166 internal nodes ]:
 ```
 
 ```{bash}
@@ -171,8 +171,8 @@ Before we begin, let's create a summary table containing some basic sample metad
 | `Pairing`      | Sample pairings                                         |
 | `raw_rc`       | No. of raw reads                                        |
 | `cutadapt_rc`  | Read count after cutdapt                                |
-| `final_rc`     | Read count after LotuS3 pipeline                        |
-| `no_asv`       | No. of ASVs                                             |
+| `lotus3_rc`    | Read count after LotuS3 pipeline                        |
+| `lotus3_asv`   | No. of ASVs                                             |
 
 <br/>
 
@@ -183,10 +183,10 @@ Now I do some wrangling of the sample data to format it for downstream analysis.
 tmp_otu <- data.frame(otu_table(physeq))
 tmp_otu_sum <- data.frame(colSums(tmp_otu > 0)) %>%
   tibble::rownames_to_column("SampleID")
-names(tmp_otu_sum)[2] <- "no_asv"
+names(tmp_otu_sum)[2] <- "lotus3_asv"
 tmp_read_sum <- data.frame(colSums(tmp_otu)) %>%
   tibble::rownames_to_column("SampleID")
-names(tmp_read_sum)[2] <- "final_rc"
+names(tmp_read_sum)[2] <- "lotus3_rc"
 tmp_track_reads <- read.table(
     "files/CUTADAPT/its_cutadapt_track.txt",
     header = TRUE, sep = "\t"
@@ -219,10 +219,11 @@ readr::write_delim(sample_tab, "files/CURATE/its_sample_data_full.txt",
 
 sample_tab_trim <- sample_tab[, -c(11:19)]
 sample_tab_trim$per_reads_kept <- 
-  round(sample_tab_trim$final_rc/sample_tab_trim$raw_rc, digits = 3)
+  round(sample_tab_trim$lotus3_rc/sample_tab_trim$raw_rc, digits = 3)
 sample_tab_trim <- sample_tab_trim %>% 
-  dplyr::relocate(per_reads_kept, .before = no_asv)
+  dplyr::relocate(per_reads_kept, .before = lotus3_asv)
 ```
+
 </br>
 
 ```{r}
@@ -257,7 +258,6 @@ Here is what the taxonomy table looks like in the dataset.
 #| echo: true
 tmp_tax <- data.frame(tax_table(physeq))
 tmp_tax[1:6, 1:4]
-
 ```
 
 ```         
@@ -295,8 +295,6 @@ And now the final, modified taxonomy table.
 #| echo: true
 #| eval: false
 tmp_tax[1:6, 1:4]
-write.table(tmp_tax[1:13, 1:4], "tmp_tax.txt", sep = " ", row.names = TRUE, quote = FALSE)
-
 ```
 
 ```
@@ -368,7 +366,7 @@ A [microtable object](https://chiliubio.github.io/microeco_tutorial/basic-class.
 ```{r}
 #| echo: true
 #| eval: false
-sample_info <- sample_tab
+sample_tab <- sample_tab
 tax_tab <- tmp_tax
 otu_tab <- tmp_otu
 ```
@@ -376,7 +374,7 @@ otu_tab <- tmp_otu
 ```{r}
 #| echo: true
 #| eval: false
-tmp_me <- microtable$new(sample_table = sample_info, 
+tmp_me <- microtable$new(sample_table = sample_tab, 
                          otu_table = otu_tab, 
                          tax_table = tax_tab)
 tmp_me
@@ -464,7 +462,7 @@ me_asv_no_na
 me_asv_no_na
 ```
 
-> The microeco object `me_asv_no_na` conatins only ASVs calssified as Archaea or Bacteria. 
+> The microeco object `me_asv_no_na` conatins only ASVs classified as Archaea or Bacteria. 
 
 Since there no contaminants (mitochondria and/or chloroplasts) and no negative control samples in this dataset we can skip to the process of removing low-count samples.
 
@@ -514,12 +512,49 @@ me_asv_no_low
 
 > The microeco object `me_asv_no_low` does not conatins the low abundance samples. 
 
-Giving us the final microtable object.
+We will quickly add final read counts and ASVs, then create the final microtable object.
 
 ```{r}
 #| echo: true
 #| eval: false
-me_asv <- microeco::clone(me_asv_no_low)
+tmp_final_rc <- data.frame(me_asv_no_low$sample_sums()) %>% 
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_rc" = 2)
+
+tmp_final_asv <- data.frame(t(me_asv_no_low$otu_table))
+tmp_final_asv <- data.frame(rowSums(tmp_final_asv > 0)) %>%
+  tibble::rownames_to_column("SampleID") %>% 
+  dplyr::rename("final_asv" = 2)
+tmp_final <- dplyr::left_join(tmp_final_rc, tmp_final_asv)
+
+sample_tab <- dplyr::full_join(sample_tab, tmp_final) %>% 
+        dplyr::relocate(c(final_rc, final_asv), .after = lotus3_asv)
+
+sample_tab <- sample_tab %>% tibble::column_to_rownames("SampleID")
+sample_tab$SampleID <- rownames(sample_tab)
+sample_tab <- sample_tab %>% dplyr::relocate(SampleID)
+
+full_sample_tab <- sample_tab
+```
+
+
+```{r}
+#| echo: true
+#| eval: false
+tmp_samp_tab <- sample_tab[complete.cases(sample_tab), ]
+tmp_tax_tab <- me_asv_no_low$tax_table
+tmp_otu_tab <- me_asv_no_low$otu_table
+tmp_rep_fasta <- me_asv_no_low$rep_fasta
+```
+
+```{r}
+#| echo: true
+#| eval: false
+me_asv <- microtable$new(sample_table = tmp_samp_tab, 
+                         otu_table = tmp_otu_tab, 
+                         tax_table = tmp_tax_tab, 
+                         rep_fasta = tmp_rep_fasta)
+me_asv$tidy_dataset()
 ```
 
 ```{r}
@@ -530,7 +565,7 @@ me_asv
 
 # Summary
 
-Now time to summarize the data. For this we use the R package [miaverse](https://microbiome.github.io) [@felix2024mia]. First we do a little formatting to get our data compatible with mia.
+Now time to summarize the data. For this we use the R package [miaverse](https://microbiome.github.io) [@felix2024mia]. 
 
 ```{r}
 #| echo: false
@@ -541,7 +576,7 @@ identical(rownames(me_asv$sample_table), colnames(me_asv$otu_table))
 
 
 ```{r}
-#| echo: true
+#| echo: false
 #| eval: false
 # https://github.com/microbiome/OMA/issues/202
 tmp_counts <- as.matrix(me_asv_raw$otu_table)
@@ -561,10 +596,17 @@ rm(list = ls(pattern = "tmp_"))
 ```
 
 ```{r}
+#| echo: false
+#| eval: false
 objs <- c("me_asv_raw", "me_asv_no_na", "me_asv_no_cont", 
           "me_asv_no_nc", "me_asv_no_low")
-
 pipe_summary <- summarize_objs(objs)
+#metric_name <- c("original", "No NA kingdom", 
+#                "no contaminants", "no neg control", 
+#                "no low count samps")
+pipe_summary$me_dataset <- c(
+  "original", "No NA kingdom", 
+  "no low count samps")
 print(pipe_summary)
 ```
 
@@ -607,7 +649,7 @@ tmp_start_asv <- data.frame(rowSums(tmp_start_asv > 0)) %>%
 
 #---------Final data-------------#
 tmp_final <- microeco::clone(me_asv)
-tmp_final_rc <- data.frame(tmp_final$sample_sums()) %>% 
+tmp_lotus3_rc <- data.frame(tmp_final$sample_sums()) %>% 
   tibble::rownames_to_column("SampleID") %>% 
   dplyr::rename("final_rc" = 2)
 
@@ -618,11 +660,11 @@ tmp_final_asv <- data.frame(rowSums(tmp_final_asv > 0)) %>%
 
 #---------Summary data-------------#
 tmp_summary <- dplyr::full_join(tmp_start_rc, tmp_start_asv) %>%
-  dplyr::left_join(., tmp_final_rc) %>%
+  dplyr::left_join(., tmp_lotus3_rc) %>%
   dplyr::left_join(., tmp_final_asv)
 
 readr::write_delim(tmp_summary, 
-                   "files/CURATE/oo_final_summary.txt", 
+                   "files/CURATE/its_final_summary.txt", 
                    delim = "\t"
 )
 
@@ -638,7 +680,6 @@ removed_samples <- curate_summary$SampleID[is.na(curate_summary$final_rc)]
 #| tbl-cap: "Beginning and ending read counts & total ASVs by sample."
 make_final_asv_rc_table(curate_summary)
 ```
-
 
 </br>
 
@@ -679,19 +720,21 @@ tmp_ps_n <- "its_ps_asv.rds"
 #| echo: false
 #| eval: false
 library(seqinr)
+#---------------OTU Table--------------#
 tmp_otu <- me_asv$otu_table %>% tibble::rownames_to_column("ASV_ID")
 write_delim(tmp_otu, paste(tmp_path, tmp_otu_n), delim = "\t")
-
+#---------------TAX Table--------------#
 tmp_tax <- me_asv$tax_table %>% tibble::rownames_to_column("ASV_ID")
 write_delim(tmp_tax, paste(tmp_path, tmp_tax_n), delim = "\t")
-
-write_delim(sample_tab, paste(tmp_path, tmp_sam_n), delim = "\t")
-
+#---------------SAMP Table--------------#
+write_delim(me_asv$sample_table, paste(tmp_path, tmp_sam_n), delim = "\t")
+#---------------REP FASTA--------------#
 write.fasta(
   sequences = as.list(as.character(me_asv$rep_fasta)),
   names = names(me_asv$rep_fasta),
   file.out = paste(tmp_path, tmp_rep_n)
 )
+#---------------        --------------#
 saveRDS(me_asv, paste(tmp_path, tmp_me_n))
 ps_asv <- file2meco::meco2phyloseq(me_asv)
 saveRDS(ps_asv, paste(tmp_path, tmp_ps_n))
@@ -709,8 +752,8 @@ rm -r its_curated_data/
 #| echo: false
 #| eval: false
 objects()
-gdata::keep(ds_metrics, sample_tab, sample_info, tax_tab, otu_tab, 
-            me_asv_raw, me_asv_no_na, sample_tab_trim, 
+gdata::keep(ds_metrics, sample_tab, full_sample_tab, tax_tab, otu_tab, 
+            me_asv_raw, me_asv_no_na, sample_tab_trim,
             me_asv_no_low, me_asv, mia_me_asv_raw, ps_asv,
             mia_me_asv, mia_me_asv_raw_summ, mia_me_asv_summ, pipe_summary,
             curate_summary, removed_samples, 

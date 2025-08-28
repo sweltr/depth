@@ -15,6 +15,7 @@ project:
     - "!paper/*/*.qmd"
     - "!test.qmd"
 # Finished pages, comment # out to build whole site
+    #- "!about.qmd"
     #- "!primers.qmd"
     #- "!lotus3.qmd"
     #- "!curate_ssu.qmd"
@@ -41,10 +42,10 @@ website:
     logo: "assets/icon.png"
     title: false
     background: light
-    left:
+#    left:
 #      - text: "Home"
-      - icon: home
-        href: index.qmd
+#      - icon: home
+#        href: index.qmd
 #      - text: "A. Processing"
 #        menu:
 #          - text: "Workflows"
@@ -81,8 +82,8 @@ website:
       - icon: github
         href: https://github.com/sweltr/depth/
         aria-label: SWELTR Depth
-      - icon: question
-        href: about.qmd
+#      - icon: question
+#        href: about.qmd
   sidebar:
       collapse-level: 2
       style: "floating"
