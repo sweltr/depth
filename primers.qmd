@@ -1,5 +1,5 @@
 ---
-title: "Primer Removal"
+title: "1. Primer Removal"
 subtitle: "Scripts for primer removal using cutadapt for the SSU, ITS, AMF, & Oomycete datasets"
 format:
   html:

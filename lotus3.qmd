@@ -1,5 +1,5 @@
 ---
-title: "ASV Inference"
+title: "2. ASV Inference"
 subtitle: "Scripts for ASV processing using the LotuS3 pipeline"
 format:
   html:

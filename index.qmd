@@ -33,15 +33,14 @@ Data provided here is the output of the [Data Curation](#data-curation) workflow
 
 ## Curated Data
 
-| Dataset         | Currated Data (zip files)                                                                                                               |  Read changes (.txt file)
-|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------:|
-| 16S rRNA (ssu)  | {{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data" icon="download"  type="link" >}}    | {{< downloadthis files/SHARE/ssu_track_read_counts.txt dname="ssu_track_read_counts" label="ssu_track_read_counts" icon="download" type="link" >}}  |
-| ITS (its)       | {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data" label="its_curated_data" icon="download" type="link" >}}     | {{< downloadthis files/SHARE/its_track_read_counts.txt dname="its_track_read_counts" label="its_track_read_counts" icon="download" type="link" >}}  |
-| AMF (amf)       | {{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data" icon="download"  type="link" >}}    | {{< downloadthis files/SHARE/amf_track_read_counts.txt dname="amf_track_read_counts" label="amf_track_read_counts" icon="download" type="link" >}}  |
-| Oomycete (oo)   | {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data" label="oo_curated_data" icon="download" type="link" >}}        | {{< downloadthis files/SHARE/oo_track_read_counts.txt dname="oo_track_read_counts" label="oo_track_read_counts" icon="download" type="link" >}}     |
+| Dataset         | Curated Data (zip files)                                                                                                                |  Read changes (.txt file)
+|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------:|
+| 16S rRNA (ssu)  | {{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data" icon="file-zip"  type="link" >}}    | {{< downloadthis files/SHARE/ssu_track_read_counts.txt dname="ssu_track_read_counts" label="ssu_track_read_counts" icon="table" type="link" >}}  |
+| ITS (its)       | {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data" label="its_curated_data" icon="file-zip" type="link" >}}     | {{< downloadthis files/SHARE/its_track_read_counts.txt dname="its_track_read_counts" label="its_track_read_counts" icon="table" type="link" >}}  |
+| AMF (amf)       | {{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data" icon="file-zip"  type="link" >}}    | {{< downloadthis files/SHARE/amf_track_read_counts.txt dname="amf_track_read_counts" label="amf_track_read_counts" icon="table" type="link" >}}  |
+| Oomycete (oo)   | {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data" label="oo_curated_data" icon="file-zip" type="link" >}}        | {{< downloadthis files/SHARE/oo_track_read_counts.txt dname="oo_track_read_counts" label="oo_track_read_counts" icon="table" type="link" >}}     |
 
 : Quick links to curated data. {tbl-colwidths="[26,37,37]"}
-
 
 These `.zip` files contain the processed data in different formats:
 
@@ -65,8 +64,6 @@ The `xyz_track_read_counts` tables listed above **include read tracking through 
 
 I strongly encourage anyone interested in these data to look closely at this table--specifically the samples which have been removed at some point in the pipeline. These are represented by `NA` in the table. **This is especially true for the Oomycete dataset**.
 
-
-
 ::: {.callout-note appearance="default" icon=false}
 
 ## Curated Data Summary Table
@@ -74,7 +71,7 @@ I strongly encourage anyone interested in these data to look closely at this tab
 You can download the table here:
 
 
-{{< downloadthis files/SHARE/all_samples_final_counts.txt dname=all_samples_final_counts label="Download final read/ASV counts in all datasets" icon=download type=link class=data-button id=all_samples_final_counts >}}
+{{< downloadthis files/SHARE/all_samples_final_counts.txt dname=all_samples_final_counts label="Download final read/ASV counts in all datasets" icon=table type=link class=data-button id=all_samples_final_counts >}}
 
 Or view it in-line below. 
 :::
@@ -87,8 +84,6 @@ Or view it in-line below.
 
 At this stage fastq files have been [renamed and primers removed](#primer-removal) and [ASVs have been called with LotuS3](#primer-removal). In this workflow I use the phyloseq output from LotuS3 to format the otu, taxonomy, and sample data tables to create a microeco object. Once that is complete I curate the dataset by removing possible contaminants, negative control samples, NA kingdoms, and low-count samples.  
 
-> As of  `r Sys.Date()` I have only done this for the SSU (16S rRNA) dataset. The rest are coming soon. 
-
 Grab this data if you:
 
 a. want to curate the data yourself or   
@@ -96,21 +91,20 @@ b. want to see the data before any spurious ASVs or samples were removed.
 
 ::: {.callout-note appearance="default" icon=false}
 
-### {{< fa download >}} &nbsp; phyloseq_ssu.Rdata
+### {{< fa download >}} &nbsp; LotuS3 phyloseq objects 
 
-{{< downloadthis files/CURATE/phyloseq_ssu.Rdata dname="phyloseq_ssu" label="LotuS3 phyloseq data" icon="code-slash" type="link" >}}
+{{< downloadthis files/CURATE/phyloseq_ssu.Rdata dname="phyloseq_ssu" label="16S rRNA LotuS3 phyloseq data" icon="database" type="link" >}} For a more detailed explanation please see the [SSU Data Curation](curate_ssu.qmd) workflow. 
+
+
+{{< downloadthis files/CURATE/phyloseq_its.Rdata dname="phyloseq_its" label="ITS LotuS3 phyloseq data" icon="database" type="link" >}} For a more detailed explanation please see the [ITS Data Curation](curate_its.qmd) workflow. 
+
+
+{{< downloadthis files/CURATE/phyloseq_amf.Rdata dname="phyloseq_amf" label="AMF LotuS3 phyloseq data" icon="database" type="link" >}} For a more detailed explanation please see the [AMF Data Curation](curate_amf.qmd) workflow. 
+
+
+{{< downloadthis files/CURATE/phyloseq_oo.Rdata dname="phyloseq_oo" label="Oomycete LotuS3 phyloseq data" icon="database" type="link" >}} For a more detailed explanation please see the [Oomycete Data Curation](curate_oo.qmd) workflow. 
 
 :::
-
-
-::: {.callout-warning icon=false}
-
-## Workflow
-
-For a more detailed explanation please see the [SSU Data Curation](curate_ssu.qmd) workflow. 
-
-:::
-
 
 ### 2. ASV Inference
 
@@ -144,7 +138,6 @@ lotus3 -i . -map oo_miSeqMap.sm.txt -o LOTUS3_ASV -sdmopt sdm_miSeq_ITS.txt -p m
 For a more detailed explanation please see the [ASV Inference](lotus3.qmd) workflow. 
 
 :::
-
 
 ### 1. Primer Removal
 

@@ -125,6 +125,7 @@ format:
     theme:
       light: [cosmo, assets/css/theme.scss]
       dark: [cosmo, assets/css/theme-dark.scss]
+    fontsize: 1.1em  
     anchor-sections: true
     number-sections: false
     embed-resources: false
