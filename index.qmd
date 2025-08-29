@@ -33,20 +33,21 @@ Data provided here is the output of the [Data Curation](#data-curation) workflow
 
 ## Curated Data
 
-| Dataset         | Currated Data (zip files)                                                                      
-|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------:|
-| 16S rRNA (ssu)  | {{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data" icon="download"  type="link" >}}    |
-| ITS (its)       | {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data.zip" label="its_curated_data" icon="download" type="link" >}} |
-| AMF (amf)       | {{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data" icon="download"  type="link" >}}    |
-| Oomycete (oo)   | {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data.zip" label="oo_curated_data" icon="download" type="link" >}}    |
+| Dataset         | Currated Data (zip files)                                                                                                               |  Read changes (.txt file)
+|-----------------|:---------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------:|
+| 16S rRNA (ssu)  | {{< downloadthis files/SHARE/ssu_curated_data.zip dname="ssu_curated_data" label="ssu_curated_data" icon="download"  type="link" >}}    | {{< downloadthis files/SHARE/ssu_track_read_counts.txt dname="ssu_track_read_counts" label="ssu_track_read_counts" icon="download" type="link" >}}  |
+| ITS (its)       | {{< downloadthis files/SHARE/its_curated_data.zip dname="its_curated_data" label="its_curated_data" icon="download" type="link" >}}     | {{< downloadthis files/SHARE/its_track_read_counts.txt dname="its_track_read_counts" label="its_track_read_counts" icon="download" type="link" >}}  |
+| AMF (amf)       | {{< downloadthis files/SHARE/amf_curated_data.zip dname="amf_curated_data" label="amf_curated_data" icon="download"  type="link" >}}    | {{< downloadthis files/SHARE/amf_track_read_counts.txt dname="amf_track_read_counts" label="amf_track_read_counts" icon="download" type="link" >}}  |
+| Oomycete (oo)   | {{< downloadthis files/SHARE/oo_curated_data.zip dname="oo_curated_data" label="oo_curated_data" icon="download" type="link" >}}        | {{< downloadthis files/SHARE/oo_track_read_counts.txt dname="oo_track_read_counts" label="oo_track_read_counts" icon="download" type="link" >}}     |
 
-: Quick links to curated data. {tbl-colwidths="[25,50]"}
+: Quick links to curated data. {tbl-colwidths="[26,37,37]"}
+
 
 These `.zip` files contain the processed data in different formats:
 
 - `xyz_otu_table.txt`: ASV by sample abundance table. 
 - `xyz_tax_table.txt`: ASV taxonomic assignments. 
-- `xyz_sample_table.txt`: Sample data table, **including read tracking through the entire workflow**.
+- `xyz_sample_table.txt`: Sample data table.
 - `xyz_rep_fasta.fasta`: Representative ASV fasta sequences.
 
 These files each contain all four tables descriped above. 
@@ -55,6 +56,8 @@ These files each contain all four tables descriped above.
 - `xyz_ps_asv.rds`: phyloseq object from the R [phyloseq](https://joey711.github.io/phyloseq/) package
 
 Where `xyz` is the root name corresponding to one of the four datasets; **ssu** = 16S rRNA, **its** = ITS, **amf** = Arbuscular mycorrhiza fungi, **oo** = Oomycetes.
+
+The `xyz_track_read_counts` tables listed above **include read tracking through the entire workflow**.
 
 :::
 

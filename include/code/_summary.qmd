@@ -12,11 +12,35 @@ library(reactablefmtr)
 ```{r}
 #| echo: false
 #| eval: false
+remove(list = ls())
 ssu_me_asv <- readRDS("files/CURATE/ssu_me_asv.rds")
 its_me_asv <- readRDS("files/CURATE/its_me_asv.rds")
 amf_me_asv <- readRDS("files/CURATE/amf_me_asv.rds")
 oo_me_asv <- readRDS("files/CURATE/oo_me_asv.rds")
 ```
+
+```{r}
+#| echo: false
+#| eval: false
+me_objs <- c("ssu_me_asv", "its_me_asv", "amf_me_asv", "oo_me_asv")
+
+for (i in me_objs) {
+  tmp_get <- get(i)
+  tmp_name <- str_remove(i, "_.*") 
+  tmp_final <- microeco::clone(tmp_get)
+  
+  tmp_final_rc <- data.frame(tmp_final$sample_sums()) %>% 
+    tibble::rownames_to_column("SampleID") %>% 
+    dplyr::rename("curate_rc" = 2)
+  
+  tmp_rc <- readr::read_delim(paste0("files/CURATE/", tmp_name, "_sample_data_with_rc.txt"), delim = "\t")
+  tmp_rc <- tmp_rc[, -c(2:6, 10,11)]
+  tmp_summ <- dplyr::full_join(tmp_rc, tmp_final_rc)
+  readr::write_delim(tmp_summ, paste0("files/SHARE/", tmp_name, "_track_read_counts.txt"), delim = "\t")
+  rm(list = ls(pattern = "tmp_"))
+}  
+```
+
 
 ```{r}
 #| echo: false
